@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Environment Monitor – DHT22</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- You can remove this meta refresh; JS below already refreshes the image -->
+  <!-- <meta http-equiv="refresh" content="300"> -->
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-card: #020617;
+      --bg-card-grad: linear-gradient(135deg, #020617, #111827);
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.15);
+      --border-soft: rgba(148, 163, 184, 0.3);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-soft: #6b7280;
+      --chip-bg: rgba(15, 23, 42, 0.8);
+      --chip-border: rgba(148, 163, 184, 0.35);
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
+      --radius-card: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 45%, #000 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      padding: 2.5rem 1.5rem 3.5rem;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.1rem);
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h1 span.logo-dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #bbf7d0 0, #22c55e 40%, #22c55e 100%);
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.9);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-soft);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.22rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border: 1px solid var(--chip-border);
+      background: var(--chip-bg);
+      backdrop-filter: blur(10px);
+    }
+
+    .chip-dot {
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+
+    .right-meta {
+      text-align: right;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .right-meta strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .card {
+      background: var(--bg-card-grad);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-soft);
+      padding: 1.25rem 1.25rem 1.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .card-header h2 span.badge {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text-muted);
+      background: radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.08), rgba(15, 23, 42, 0.9));
+    }
+
+    .card-header .range {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
+
+    .chart-wrapper {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: radial-gradient(circle at top, rgba(34, 197, 94, 0.12), rgba(15, 23, 42, 0.8));
+      position: relative;
+    }
+
+    .chart-wrapper::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.13), transparent 55%);
+      mix-blend-mode: screen;
+    }
+
+    .chart-img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .card-footer {
+      margin-top: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .card-footer .legend {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .legend-swatch {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 0.25rem;
+      background: transparent;
+      border: 2px solid var(--accent);
+    }
+
+    .legend-swatch.humidity {
+      border-color: #38bdf8;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.45);
+      font-size: 0.78rem;
+    }
+
+    .status-pill-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+
+    .refresh-info {
+      margin-top: 0.25rem;
+      font-size: 0.78rem;
+      color: var(--text-soft);
+    }
+
+    @media (max-width: 720px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .right-meta {
+        text-align: left;
+      }
+    }
+  </style>
+
+  <script>
+    function refreshCharts() {
+      const ts = Date.now();
+      const imgs = document.querySelectorAll('img[data-chart="true"]');
+      imgs.forEach(img => {
+        const base = img.getAttribute('data-src');
+        if (!base) return;
+        img.src = base + '?ts=' + ts;
+      });
+
+      const stamp = document.getElementById('last-refresh');
+      if (stamp) {
+        stamp.textContent = new Date().toLocaleString();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshCharts();                 // initial load with cache-buster
+      setInterval(refreshCharts, 60000); // refresh every 60 seconds
+    });
+  </script>
+</head>
+
+<body>
+  <div class="page">
+    <header>
+      <div class="title-block">
+        <h1><span class="logo-dot"></span> Environment Monitor</h1>
+        <p class="subtitle">
+          Raspberry&nbsp;Pi + DHT22 (AM2302) &mdash; periodic readings stored in RRD and rendered as charts.
+        </p>
+        <div class="meta">
+          <div class="chip">
+            <span class="chip-dot"></span>
+            10&nbsp;min interval
+          </div>
+          <div class="chip">
+            <span>Resolution: last 7&nbsp;days</span>
+          </div>
+          <div class="chip">
+            <span>Backend: RRDTool + Lighttpd</span>
+          </div>
+        </div>
+      </div>
+      <div class="right-meta">
+        <div>Last refresh:</div>
+        <div><strong id="last-refresh">–</strong></div>
+        <div class="refresh-info">Chart auto-updates every 60&nbsp;s.</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="card-header">
+          <h2>
+            Temperature &amp; Humidity
+            <span class="badge">last 7 days</span>
+          </h2>
+          <div class="range">
+            Source: <code>dht22.rrd</code>
+          </div>
+        </div>
+
+        <div class="chart-wrapper">
+          <!-- Main chart created by rrdtool (make_chart.sh) -->
+<img
+  class="chart-img"
+  data-chart="true"
+  data-src="dht22_24h.png"
+  alt="Temperature and humidity chart from DHT22 sensor (last 24 hours)"
+><br>
+          <img
+            class="chart-img"
+            data-chart="true"
+            data-src="dht22_7d.png"
+            alt="Temperature and humidity chart from DHT22 sensor (last 7 days)"
+          >
+        </div>
+
+        <div class="card-footer">
+          <div class="legend">
+            <div class="legend-item">
+              <span class="legend-swatch temp"></span>
+              <span>Temperature (°C)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch humidity"></span>
+              <span>Humidity (% scaled ×0.5 in chart)</span>
+            </div>
+          </div>
+
+          <div class="status-pill">
+            <span class="status-pill-dot"></span>
+            Sensor online
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

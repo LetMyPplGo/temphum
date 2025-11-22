@@ -1,0 +1,7 @@
+# crontab -e
+
+# Read DHT22 every 10 minutes using venv1 Python
+*/10 * * * * cd /home/admin/temphum && /home/admin/temphum/venv1/bin/python /home/admin/temphum/read_data.py >> /home/admin/temphum/read_data.log 2>&1
+
+# Refresh charts every 10 minutes, offset by 1 minute
+1,11,21,31,41,51 * * * * /home/admin/temphum/make_chart.sh >> /home/admin/temphum/make_chart.log 2>&1
