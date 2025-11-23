@@ -2,42 +2,57 @@ from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
+from bus import next_three_reading_buses
+from get_weather import get_today_summary
+
 # --- config ---
 I2C_ADDRESS = 0x3C        # change to 0x3D if your module shows that in i2cdetect
 ROTATION = 0              # 0, 1, 2, 3 if you need to rotate
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"  # good for EN/RU
-FONT_SIZE = 12            # 12 * 5 = 60px tall -> fits into 64px with margins
-LINES = [
-    "Line 1: Hello",
-    "Line 2: RPi Zero 2",
-    "Line 3: SSD1306",
-    "Line 4: I2C",
-    "Line 5: ✔ Ready"
-]
+FONT_SIZE = 15            # 15+1 * 4 = 64px tall
 
 # --- init display ---
 serial = i2c(port=1, address=I2C_ADDRESS)
 device = ssd1306(serial, rotate=ROTATION)  # 128x64
 
-# --- render ---
-W, H = device.width, device.height
-img = Image.new("1", (W, H), 0)   # 1-bit image
-draw = ImageDraw.Draw(img)
+def update_display(lines: list):
+    w, h = device.width, device.height
+    img = Image.new("1", (w, h), 0)   # 1-bit image
+    draw = ImageDraw.Draw(img)
 
-# load font
-font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+    y = 0
+    for line in lines:
+        if type(line) == dict:
+            text = line.get('text', '')
+            font_size = line.get('font', FONT_SIZE)
+        else:
+            text = line
+            font_size = FONT_SIZE
 
-# draw lines (auto-truncate to display width)
-line_height = FONT_SIZE + 1
-y = 0
-for text in LINES[:5]:
-    # truncate so it fits width
-    t = text
-    while font.getlength(t) > (W - 2) and len(t) > 0:
-        t = t[:-1]
-    draw.text((1, y), t, font=font, fill=255)
-    y += line_height
-    if y >= H:
-        break
+        # load font
+        font = ImageFont.truetype(FONT_PATH, font_size)
+        line_height = font_size + 1
 
-device.display(img)
+        # truncate so it fits width
+        while font.getlength(text) > (w - 2) and len(text) > 0:
+            text = text[:-1]
+        draw.text((1, y), text, font=font, fill=255)
+        y += line_height
+        if y >= h:
+            break
+
+    device.display(img)
+
+if __name__ == '__main__':
+    lines = [
+        "-= Hello =-",
+        "Weather & Bus",
+        "Reading, Lima crt",
+        "Loading...",
+    ]
+    update_display(lines)
+
+    weather = get_today_summary()
+    lines = [{'text': weather, 'font': 12},] + next_three_reading_buses('039026550001')
+    update_display(lines)
+
