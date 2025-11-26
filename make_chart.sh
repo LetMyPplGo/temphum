@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-RRD="/home/admin/temphum/dht/dht22.rrd"
-OUT_DIR="/home/admin/temphum/www"
+RRD="/etc/temphum/dht22.rrd"
+OUT_DIR="/etc/temphum/www"
 
 mkdir -p "$OUT_DIR"
 

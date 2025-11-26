@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
-from bus import next_three_reading_buses
+from bus import next_buses
 from get_weather import get_today_summary
 
 # --- config ---
@@ -12,8 +14,8 @@ FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"  # good for EN
 FONT_SIZE = 15            # 15+1 * 4 = 64px tall
 
 # --- init display ---
-serial = i2c(port=1, address=I2C_ADDRESS)
-device = ssd1306(serial, rotate=ROTATION)  # 128x64
+# serial = i2c(port=1, address=I2C_ADDRESS)
+# device = ssd1306(serial, rotate=ROTATION)  # 128x64
 
 def update_display(lines: list):
     w, h = device.width, device.height
@@ -50,9 +52,11 @@ if __name__ == '__main__':
         "Reading, Lima crt",
         "Loading...",
     ]
-    update_display(lines)
+    # update_display(lines)
 
     weather = get_today_summary()
-    lines = [{'text': weather, 'font': 12},] + next_three_reading_buses('039026550001')
-    update_display(lines)
+    now = datetime.now().strftime("%H:%M")
+    lines = [{'text': f'{now} {weather}', 'font': 12},] + next_buses('039026550001')
+    print(lines)
+    # update_display(lines)
 

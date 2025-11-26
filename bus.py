@@ -3,60 +3,94 @@ import os
 import requests
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+import xmltodict
+
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 
-def next_three_reading_buses(stop_code: str):
+LONDON = ZoneInfo("Europe/London")
+
+def _parse_iso(iso_ts: Optional[str]) -> Optional[datetime]:
+    if not iso_ts:
+        return None
+    try:
+        # handle both "+00:00" and "Z"
+        if iso_ts.endswith("Z"):
+            iso_ts = iso_ts[:-1] + "+00:00"
+        return datetime.fromisoformat(iso_ts).astimezone(LONDON)
+    except Exception:
+        return None
+
+def _to_hhmm(dt: Optional[datetime]) -> str:
+    return dt.strftime("%H:%M") if dt else ""
+
+def extract_bus_times_one_time(siri: Dict[str, Any]) -> List[Dict[str, str]]:
+    """
+    Return rows with: line, destination, time (hh:mm).
+    Time is chosen by 'monitored': expected if monitored, else aimed.
+    """
+    try:
+        delivery = siri["Siri"]["ServiceDelivery"]["StopMonitoringDelivery"]
+    except (KeyError, TypeError):
+        return []
+
+    visits = delivery.get("MonitoredStopVisit", [])
+    if isinstance(visits, dict):
+        visits = [visits]
+
+    now = datetime.now(tz=LONDON)
+    rows: List[Dict[str, str]] = []
+    for v in visits:
+        vj = (v or {}).get("MonitoredVehicleJourney", {}) or {}
+        call = vj.get("MonitoredCall", {}) or {}
+
+        line = vj.get("PublishedLineName") or vj.get("LineRef") or ""
+        destination = vj.get("DestinationName") or vj.get("DestinationRef") or ""
+        monitored = str(vj.get("Monitored", "")).lower() == "true"
+
+        aimed_dt = _parse_iso(call.get("AimedArrivalTime"))
+        expected_dt = _parse_iso(call.get("ExpectedArrivalTime"))
+        chosen_dt = expected_dt if (monitored and expected_dt) else aimed_dt
+
+        hhmm = _to_hhmm(chosen_dt)
+        diff_min = round((chosen_dt - now).total_seconds() / 60) if chosen_dt else None
+
+        rows.append({
+            "line": line,
+            "destination": destination,
+            "time": hhmm,
+            'due_at': diff_min,
+        })
+
+    return rows[:3]
+
+def next_buses(stop_code: str, as_dict: bool = False):
     """
     Return the next 3 predicted departures for a Reading Buses stop (by Acto-code).
     Requires an API key from reading-opendata.r2p.com.
     """
-    # NOTE: The exact path/param names are shown in the portal after login.
-    # Commonly it's the "Stop Predictions" API; adjust `url` and `params` if your portal shows different names.
     api_key = os.environ.get('ROD_API_KEY')
     base_url = "https://reading-opendata.r2p.com"
-    url = f"{base_url}/api/StopPredictions"          # sometimes shown as /api/stop-predictions
-    params = {"ActoCode": stop_code, "format": "json"}
-    headers = {"Accept": "application/json", "X-Api-Key": api_key}
-
-    r = requests.get(url, params=params, headers=headers, timeout=10)
+    url = f"{base_url}/api/v1/siri-sm"
+    params = {"api_token": api_key, "location": stop_code}
+    r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
-    records = r.json()  # array of records
+    records = extract_bus_times_one_time(xmltodict.parse(r.text))
+    if as_dict:
+        return records
+    else:
+        # return [f"{item.get('time', '??:??')} {item.get('line', '??')} {item.get('destination', '?')}" for item in records]
+        return [f"{item.get('due_at', '??')}m {item.get('line', '??')} {item.get('destination', '?')}" for item in records]
 
-    def parse_iso(dt_str):
-        if not dt_str:
-            return None
-        # Accept both 'Z' and '+00:00' endings
-        if dt_str.endswith("Z"):
-            dt_str = dt_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(dt_str)
 
-    # Choose the first available time (ExpectedDeparture, then ScheduledDeparture)
-    for rec in records:
-        rec["_when"] = parse_iso(rec.get("ExpectedDeparture")) or parse_iso(rec.get("ScheduledDeparture"))
-
-    upcoming = sorted((r for r in records if r.get("_when")), key=lambda r: r["_when"])[:3]
-
-    now = datetime.now(timezone.utc)
-    result = []
-    for rec in upcoming:
-        minutes = int((rec["_when"] - now).total_seconds() // 60)
-        due_in = f"{minutes} min" if minutes >= 0 else "due",
-        result.append(f'{due_in} {rec.get("ServiceNumber")} to {rec.get("DestinationName")}')
-        # result.append({
-        #     "service": rec.get("ServiceNumber"),
-        #     "destination": rec.get("DestinationName"),
-        #     "due_in": f"{mins} min" if mins >= 0 else "due",
-        #     "expected_time_utc": rec.get("ExpectedDeparture"),
-        #     "scheduled_time_utc": rec.get("ScheduledDeparture"),
-        #     "vehicle": rec.get("VehicleRef"),
-        # })
-    return result
 
 if __name__ == '__main__':
     # 039027180001 - Russel street bus stop code according to ChatGPT
     # 039026550001 - Lima Court bus stop
     # print(next_three_reading_buses('039027180001'))
-    print(next_three_reading_buses('039026550001'))
+    print(next_buses('039026550001'))
 
 

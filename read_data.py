@@ -8,7 +8,7 @@ import adafruit_dht
 import rrdtool
 
 GPIO_PIN = board.D4   # BCM4 / Pin 7 on the header
-RRD = "/home/admin/temphum/dht/dht22.rrd"
+RRD = "/etc/temphum/dht/dht22.rrd"
 
 # Initialise sensor
 dht = adafruit_dht.DHT22(GPIO_PIN)

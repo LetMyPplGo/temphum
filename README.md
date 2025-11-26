@@ -2,7 +2,7 @@
 
 
 ## Tools used
-* All setup is for Raspberry Zero 2 W
+* All setup is for Raspberry Zero 2 W (currently it's a sidecar on RPI 3B with klipper+mainsail)
 * DHT22 sensor for temperature and Humidity (read_data.py)
 * OLED I2C 128x64 SSD1306 to display text
 * Python + RRDTool (time-series DB with auto-rollups) + lighthttpd, etc
@@ -11,9 +11,9 @@
 
 
 ## Assumptions
-* Working dir is /home/admin/temphum (if not - change in all scripts)
-* RRD DB is in folder /home/admin/temphum/dht
-* Web root is /home/admin/temphum/www 
+* Working dir is /etc/temphum
+* RRD DB is in /etc/temphum/dht22.rrd
+* Web root is /etc/temphum/www 
 
 ## Prepare
 1. Run install.sh -> it installs needed libs
@@ -21,9 +21,9 @@
 3. Copy index.html into the web root
 4. Setup cron as shown in cron.tab
 5. If your nginx/lighthttpd is serving from some special place, create a symlink
-`sudo ln -s /home/admin/temphum/www /home/admin/mainsail/env`
+`sudo ln -s /etc/temphum/www /home/admin/mainsail/env`
 As temporary solution you can use python http server:
-`cd /home/admin/temphum/www && python3 -m http.server 8088`
+`cd /etc/temphum/www && python3 -m http.server 8088`
 But better use lighthppd or nginx (I use RPI that serves as klipper+mainsail for 3D printer, so I reuse mainsail nginx for that, see step 5 above)
 
 ## How it works

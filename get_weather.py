@@ -155,17 +155,17 @@ def _build_compact_line(place: str, hourly: Dict[str, List[Optional[float]]]) ->
 
     # Temperature range
     if t_min is not None and t_max is not None:
-        parts.append(f"{t_min:.0f}–{t_max:.0f}°C")
+        parts.append(f"{t_min:.0f}/{t_max:.0f}°C")
     elif t_max is not None:
         parts.append(f"↗{t_max:.0f}°C")
 
-    # Snow
-    if s_total > 0:
-        parts.append(f"S{s_total:.1f}cm")
-
-    # Rain
-    if r_total > 0:
-        parts.append(f"R{r_total:.1f}mm")
+    # # Snow
+    # if s_total > 0:
+    #     parts.append(f"S{s_total:.1f}cm")
+    #
+    # # Rain
+    # if r_total > 0:
+    #     parts.append(f"R{r_total:.1f}mm")
 
     # Precip probability
     if p_max is not None and p_max > 0:
