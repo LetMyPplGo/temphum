@@ -23,13 +23,8 @@ def update_display(lines: list):
     draw = ImageDraw.Draw(img)
 
     y = 0
-    for line in lines:
-        if type(line) == dict:
-            text = line.get('text', '')
-            font_size = line.get('font', FONT_SIZE)
-        else:
-            text = line
-            font_size = FONT_SIZE
+    for i, text in enumerate(lines):
+        font_size = 12 if i==0 else FONT_SIZE
 
         # load font
         font = ImageFont.truetype(FONT_PATH, font_size)
@@ -45,6 +40,12 @@ def update_display(lines: list):
 
     device.display(img)
 
+def get_lines():
+    weather = get_today_summary()
+    now = datetime.now().strftime("%H:%M")
+    return [f'{now} {weather}',] + next_buses('039026550001')
+
+
 if __name__ == '__main__':
     lines = [
         "-= Hello =-",
@@ -54,9 +55,7 @@ if __name__ == '__main__':
     ]
     # update_display(lines)
 
-    weather = get_today_summary()
-    now = datetime.now().strftime("%H:%M")
-    lines = [{'text': f'{now} {weather}', 'font': 12},] + next_buses('039026550001')
+    lines = get_lines()
     print(lines)
     # update_display(lines)
 

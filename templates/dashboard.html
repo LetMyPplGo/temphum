@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Control Panel</title>
+
+  <!-- Пиксельный шрифт -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --panel: rgba(255,255,255,0.06);
+      --panel-strong: rgba(255,255,255,0.12);
+      --text: #e5ecf5;
+      --muted:#9aa8be;
+      --accent:#70e1ff;
+      --accent2:#9b59ff;
+      --ok:#35d399;
+    }
+    *{ box-sizing: border-box; }
+    html, body { height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(112,225,255,0.08), transparent 60%),
+        radial-gradient(1200px 600px at 110% 110%, rgba(155,89,255,0.08), transparent 60%),
+        var(--bg);
+      font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .container{
+      max-width: 1080px;
+      margin: 40px auto;
+      padding: 0 20px 40px;
+    }
+    .title{
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .glow{
+      color: transparent;
+      background: linear-gradient(90deg,var(--accent),var(--accent2));
+      -webkit-background-clip: text; background-clip:text;
+      text-shadow: 0 0 24px rgba(112,225,255,0.25);
+    }
+    .grid{
+      margin-top: 24px;
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .card{
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-strong);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      z-index: 4001;
+    }
+    .card, .grid { overflow: visible; }
+    .card h3{
+      margin:0 0 12px;
+      font-size: 16px;
+      letter-spacing: .3px;
+    }
+    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+    input[type="text"],
+    input[type="password"],
+    input[type="search"],
+    .select,
+    .pixel-lines textarea{
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--panel-strong);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      outline: none;
+      transition: border .15s ease, box-shadow .15s ease;
+    }
+    input:focus, .select:focus, .pixel-lines textarea:focus{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(112,225,255,0.18);
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: linear-gradient(90deg,var(--accent),var(--accent2));
+      color: #0b0f14; font-weight: 700;
+      cursor: pointer;
+      transition: transform .06s ease, filter .2s ease;
+    }
+    .btn:hover{ filter: brightness(1.05); }
+    .btn:active{ transform: translateY(1px); }
+    .row{ display:flex; gap:10px; }
+    .row > * { flex: 1; }
+
+    /* Поисковый Select */
+    .search-select{
+      position: relative;
+      z-index: 4000;
+    }
+    .options{
+      position: relative;
+      z-index: 4000;
+    }
+    .search-select .dropdown{
+      position:absolute; left:0; right:0; top: calc(100% + 6px);
+      background: var(--bg);
+      border: 1px solid var(--panel-strong);
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+      border-radius: 12px;
+      max-height: 260px; overflow: auto; z-index: 10;
+      display:none;
+      z-index: 5000;
+    }
+    .search-select.open .dropdown{ display:block; }
+    .search-select .searchbox{
+      width:100%;
+      padding: 10px 12px;
+      border: none; border-bottom:1px solid var(--panel-strong);
+      background: rgba(255,255,255,0.03);
+      color: var(--text); outline:none;
+      border-radius: 12px 12px 0 0;
+    }
+    .option{
+      padding: 10px 12px; cursor: pointer; transition: background .1s ease;
+      display:flex; gap:8px; align-items:center;
+    }
+    .option:hover{ background: rgba(255,255,255,0.06); }
+    .option.active{ background: rgba(112,225,255,0.15); }
+    .muted{ color: var(--muted); font-size: 12px; }
+    .pixel-lines textarea{
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      height: 140px;
+      resize: vertical;
+      letter-spacing: .5px;
+    }
+    .chart-card{ grid-column: span 12; }
+    .chart-card canvas{ position: relative; z-index: 1; }
+    .footer-note{
+      margin-top: 12px; font-size: 12px; color: var(--muted);
+    }
+
+    /* Сетка карточек */
+    .wifi-card{ grid-column: span 6; }
+    .bus-card{ grid-column: span 6; }
+    .api-card{ grid-column: span 6; }
+    .pixel-card{ grid-column: span 6; }
+    @media (max-width: 900px){
+      .wifi-card,.bus-card,.api-card,.pixel-card,.chart-card{ grid-column: span 12;}
+    }
+
+    /* Флеш-сообщения */
+    .toast{
+      position: fixed; right: 18px; top: 18px; z-index: 100;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .toast .item{
+      background: rgba(53, 211, 153, 0.12);
+      border:1px solid rgba(53, 211, 153, 0.35);
+      color:#b8f7dc;
+      padding:10px 12px; border-radius:10px;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Readonly поле в темной теме */
+    .readonly{
+      opacity: .8;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3l3 3-3 3-3-3 3-3zm0 12l3 3-3 3-3-3 3-3zM3 12l3-3 3 3-3 3-3-3zm12 0l3-3 3 3-3 3-3-3z"
+              stroke="url(#g)" stroke-width="1.2" />
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="24" y2="24">
+            <stop stop-color="#70e1ff"/><stop offset="1" stop-color="#9b59ff"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>The <span class="glow">Dashboard</span></span>
+    </div>
+
+    <!-- Флеш-сообщения -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="toast" id="toast">
+        {% for msg in messages %}
+          <div class="item">{{ msg }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.remove(); }, 3200);
+      </script>
+      {% endif %}
+    {% endwith %}
+
+    <div class="grid">
+      <!-- 1. Wi-Fi -->
+      <div class="card wifi-card">
+        <h3>Wi-Fi настройки</h3>
+        <form method="post" action="{{ url_for('save_wifi') }}">
+          <label for="ssid">Имя сети (SSID)</label>
+          <input id="ssid" name="ssid" type="text" placeholder="MyWiFi"
+                 value="{{ wifi_ssid or '' }}" autocomplete="off" required>
+
+          <label for="password">Пароль</label>
+          <input id="password" name="password" type="password" placeholder="••••••••"
+                 value="{{ wifi_password or '' }}" autocomplete="new-password" required>
+
+          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 2. Остановки с поиском по подстроке -->
+      <div class="card bus-card">
+        <h3>Автобусная остановка</h3>
+
+        <form method="post" action="{{ url_for('save_stop') }}">
+          <label>Выберите остановку</label>
+
+          <div class="search-select" id="busSelect">
+            <!-- Отображаемое выбранное значение -->
+            <div class="select" role="button" tabindex="0" id="selectDisplay">— выберите остановку —</div>
+
+            <!-- Выпадающее окно -->
+            <div class="dropdown" aria-hidden="true">
+              <input class="searchbox" type="search" placeholder="Поиск по подстроке…" id="searchBox">
+              <div id="options" class="options">
+                {% for stop in bus_stops %}
+                  <div class="option" data-id="{{ stop.id }}" data-name="{{ stop.name }}">
+                    <span>{{ stop.name }}</span>
+                    <span class="muted">#{{ stop.id }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Скрытое реальное поле -->
+            <input type="hidden" name="stop_id" id="selectedStopId" value="{{ selected_stop_id or '' }}">
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 3. API Key -->
+      <div class="card api-card">
+        <h3>API Key автобусного сервиса</h3>
+        <form method="post" action="{{ url_for('save_api_key') }}">
+          <label for="api_key">API Key</label>
+          <input id="api_key" name="api_key" type="text" placeholder="r2p_xxx_yyy"
+                 value="{{ api_key or '' }}" autocomplete="off" spellcheck="false">
+          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 4. Четыре строчки пиксельного текста -->
+      <div class="card pixel-card">
+        <h3>Табло</h3>
+        <pre>{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
+      </div>
+
+      <!-- 5. График -->
+      <div class="card chart-card">
+        <h3>График</h3>
+        <canvas id="chartCanvas" style="width:100%; height: 360px;"></canvas>
+        <div class="footer-note">Здесь будет рендериться график (например, Chart.js). Подключите данные на стороне клиента.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- (опционально) Chart.js — вы можете убрать, если не нужен сейчас -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    // ====== Быстрый мок графика (можно удалить) ======
+    (function(){
+      const ctx = document.getElementById('chartCanvas');
+      if(!ctx || !window.Chart) return;
+      const now = Date.now();
+      const labels = Array.from({length: 12}, (_,i)=> new Date(now - (11-i)*3600_000).toLocaleTimeString());
+      const data = Array.from({length: 12}, ()=> Math.round(30 + Math.random()*10));
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Demo', data }] },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: '#cfe7ff'} } },
+          scales: {
+            x: { ticks: { color: '#9aa8be' }, grid: { color: 'rgba(154,168,190,0.15)'} },
+            y: { ticks: { color: '#9aa8be' }, grid: { color: 'rgba(154,168,190,0.15)'} }
+          }
+        }
+      });
+    })();
+
+    // ====== Поисковый dropdown для остановок ======
+    (function(){
+      const root = document.getElementById('busSelect');
+      if(!root) return;
+      const display = root.querySelector('#selectDisplay');
+      const drop = root.querySelector('.dropdown');
+      const search = root.querySelector('#searchBox');
+      const options = Array.from(root.querySelectorAll('.option'));
+      const hidden = root.querySelector('#selectedStopId');
+
+      //function open(){ root.classList.add('open'); search.focus(); }
+      // В твоём блоке dropdown-логики:
+      function open(){
+        const root = document.getElementById('busSelect');
+        const dd = root.querySelector('.dropdown');
+        const box = root.getBoundingClientRect();
+        dd.style.position = 'fixed';
+        dd.style.left = box.left + 'px';
+        dd.style.top  = (box.bottom + 6) + 'px';
+        dd.style.width = box.width + 'px';
+        root.classList.add('open');
+      }
+      window.addEventListener('scroll', ()=> document.getElementById('busSelect')?.classList.remove('open'), {passive:true});
+      window.addEventListener('resize', ()=> document.getElementById('busSelect')?.classList.remove('open'));
+
+
+      function close(){ root.classList.remove('open'); }
+      function setActive(opt){
+        options.forEach(o => o.classList.toggle('active', o===opt));
+        display.textContent = `${opt.dataset.name}  (#${opt.dataset.id})`;
+        hidden.value = opt.dataset.id;
+      }
+
+      // Инициализация выбранного значения
+      const initial = hidden.value && options.find(o=>o.dataset.id === hidden.value);
+      if(initial){ setActive(initial); } else { display.textContent = '— выберите остановку —'; }
+
+      display.addEventListener('click', ()=> root.classList.toggle('open'));
+      display.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') open(); });
+
+      // Фильтр по подстроке в названии или ID
+      function filter(){
+        const q = search.value.trim().toLowerCase();
+        options.forEach(opt=>{
+          const hay = (opt.dataset.name + ' ' + opt.dataset.id).toLowerCase();
+          opt.style.display = hay.includes(q) ? '' : 'none';
+        });
+      }
+      search.addEventListener('input', filter);
+
+      options.forEach(opt=>{
+        opt.addEventListener('click', ()=>{ setActive(opt); close(); });
+      });
+
+      // Закрытие по клику вне
+      document.addEventListener('click', (e)=>{ if(!root.contains(e.target)) close(); });
+
+      // Клавиатура в списке
+      root.addEventListener('keydown', (e)=>{
+        if(!root.classList.contains('open')) return;
+        const visible = options.filter(o=>o.style.display!=='none');
+        const current = visible.findIndex(o=>o.classList.contains('active'));
+        if(e.key==='ArrowDown'){
+          e.preventDefault();
+          const idx = current<0 ? 0 : Math.min(current+1, visible.length-1);
+          setActive(visible[idx]);
+          visible[idx].scrollIntoView({block:'nearest'});
+        } else if(e.key==='ArrowUp'){
+          e.preventDefault();
+          const idx = current<=0 ? 0 : current-1;
+          setActive(visible[idx]);
+          visible[idx].scrollIntoView({block:'nearest'});
+        } else if(e.key==='Enter'){
+          e.preventDefault(); close();
+        } else if(e.key==='Escape'){
+          close();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
