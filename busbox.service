@@ -1,0 +1,28 @@
+# To be put into /etc/systemd/system/busbox.service
+# Enable and run:
+#  sudo systemctl daemon-reload
+#  sudo systemctl enable busbox.service
+#  sudo systemctl start busbox.service
+# See logs:
+#  journalctl -u busbox.service -f
+
+
+[Unit]
+Description=Bus Box
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/etc/temphum
+ExecStart=/etc/temphum/venv/bin/python -u backend.py
+User=user
+Group=user
+
+StandardOutput=journal
+StandardError=journal
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

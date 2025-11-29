@@ -9,7 +9,7 @@ cd /etc/temphum
 python3 -m venv --system-site-packages venv
 source /etc/temphum/venv/bin/activate
 
-pip install adafruit-blinka adafruit-circuitpython-dht pillow smbus2 luma.oled xmltodict flask
+pip install -r requirements.txt
 sudo systemctl enable --now lighttpd
 
 #cd /home/admin/temphum/dht

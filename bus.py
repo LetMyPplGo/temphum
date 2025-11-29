@@ -67,6 +67,18 @@ def extract_bus_times_one_time(siri: Dict[str, Any]) -> List[Dict[str, str]]:
 
     return rows[:3]
 
+def get_bus_stops():
+    return [
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+        {'id': '1234567', 'name': 'Station'},
+    ]
+
 def next_buses(stop_code: str, as_dict: bool = False):
     """
     Return the next 3 predicted departures for a Reading Buses stop (by Acto-code).
@@ -76,9 +88,15 @@ def next_buses(stop_code: str, as_dict: bool = False):
     base_url = "https://reading-opendata.r2p.com"
     url = f"{base_url}/api/v1/siri-sm"
     params = {"api_token": api_key, "location": stop_code}
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    records = extract_bus_times_one_time(xmltodict.parse(r.text))
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+    except Exception as err:
+        print(f'Failed to get bus info\n{err}')
+        records = [{}]
+    else:
+        records = extract_bus_times_one_time(xmltodict.parse(r.text))
+
     if as_dict:
         return records
     else:

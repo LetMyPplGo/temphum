@@ -22,7 +22,11 @@ def get_today_summary(place: str = "Reading", country_code: str = "GB") -> str:
     Example:
         "🌦️ Reading 4–9°C 💨6↗11m/s 🌧️2.3mm ☔78%"
     """
-    loc = _geocode(place, country_code)
+    try:
+        loc = _geocode(place, country_code)
+    except Exception as err:
+        print(f'Failed to get weather\n{err}')
+        return '--'
 
     base_vars = [
         "weathercode",

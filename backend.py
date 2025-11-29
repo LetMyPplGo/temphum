@@ -1,7 +1,13 @@
+import os
+import threading
+
 from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
+from waitress import serve
 
+from bus import get_bus_stops
 from helpers import read_state, write_state
+from lib_wifi import wait_for_internet, start_ap_mode, start_client_mode, connect_with_fallback
 from write_oled import get_lines
 load_dotenv()
 app = Flask(__name__)
@@ -20,7 +26,7 @@ def index():
         wifi_ssid=state["wifi_ssid"],
         wifi_password=state["wifi_password"],
         api_key=f'**********************************{state["api_key"][-3:]}',
-        bus_stops='',#get_bus_stops(),
+        bus_stops=get_bus_stops(),
         selected_stop_id=state["selected_stop_id"],
         pixel_lines=get_lines(),
     )
@@ -35,7 +41,8 @@ def save_wifi():
     state["wifi_password"] = pwd
     write_state(state)
 
-    flash("Wi-Fi настройки сохранены.")
+    flash("Wi-Fi настройки сохранены. Подключаемся к WiFi")
+    threading.Thread(target=connect_with_fallback, args=(ssid, pwd), daemon=True).start()
     return redirect(url_for("index"))
 
 @app.route("/save_stop", methods=["POST"])
@@ -62,4 +69,13 @@ def save_api_key():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    if not wait_for_internet():
+        start_ap_mode()
+
+    AT_DEBUG = bool(os.getenv('AT_DEBUG', 0))
+    if AT_DEBUG:
+        print('Running in DEBUG mode')
+        app.run(debug=True, host="0.0.0.0")
+    else:
+        print('Running in prod mode')
+        serve(app, host="0.0.0.0", port=8000)
