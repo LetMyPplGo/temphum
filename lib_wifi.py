@@ -1,6 +1,8 @@
 import subprocess
 import time
 
+from helpers import APMode, read_state
+
 
 def run_cmd(args):
     """
@@ -32,18 +34,24 @@ def stop_all_wifi_connections():
     run_cmd(["nmcli", "device", "disconnect", "wlan0"])
 
 
-def start_ap_mode(ssid="busbox", password="busboxBUSBOX"):
-    # stop_all_wifi_connections()
+def start_ap_mode():
+    # Connection name "Hotspot" is created by default
+    stop_all_wifi_connections()
+    settings = read_state()
+    ssid = settings.get('ap_ssid', 'busbox')
+    password = settings.get('ap_password', 'busboxBUSBOX')
 
-    run_cmd([
-        "nmcli", "device", "wifi", "hotspot",
-        "ifname", "wlan0",
-        "ssid", ssid,
-        "password", password
-    ])
-
-    # По умолчанию создаётся connection с именем "Hotspot"
-    print(f"AP mode ON: SSID={ssid}, password={password}")
+    try:
+        run_cmd([
+            "nmcli", "device", "wifi", "hotspot",
+            "ifname", "wlan0",
+            "ssid", ssid,
+            "password", password
+        ])
+    except Exception as err:
+        print(f'Failedto enable AP mode\n{err}')
+    else:
+        print(f"AP mode ON: SSID={ssid}, password={password}")
 
 
 def start_client_mode(ssid, password, connection_name=None):
@@ -125,23 +133,20 @@ def wait_for_internet(timeout: int = 10,
     print("Internet did not appear within timeout")
     return False
 
-def connect_with_fallback(ssid, pwd):
+def connect_with_fallback(ssid: str, pwd: str, is_ap_mode: APMode):
     try:
+        print(f'Connecting to {ssid}')
         start_client_mode(ssid, pwd)
     except Exception as err:
         print(f'Failed to enable wifi\n{err}')
+
     if not wait_for_internet():
         print(f'Failed to connect to {ssid}, fallback to AP mode')
+        is_ap_mode.on = True
         start_ap_mode()
+    else:
+        is_ap_mode.on = False
 
 
 if __name__ == "__main__":
     print(wait_for_internet())
-
-    # 1) Включить режим точки доступа:
-    # start_ap_mode()
-
-    # 2) Включить режим клиента:
-    # start_client_mode("MyHomeWiFi", "SuperSecretPass")
-
-    pass

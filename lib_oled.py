@@ -19,6 +19,10 @@ FONT_SIZE = 15            # 15+1 * 4 = 64px tall
 # device = ssd1306(serial, rotate=ROTATION)  # 128x64
 
 def update_display(lines: list):
+    with open('oled_emu.txt', 'w') as f:
+        f.write('\n'.join(lines))
+
+def update_display_true(lines: list):
     w, h = device.width, device.height
     img = Image.new("1", (w, h), 0)   # 1-bit image
     draw = ImageDraw.Draw(img)
@@ -41,12 +45,6 @@ def update_display(lines: list):
 
     device.display(img)
 
-def get_lines():
-    weather = get_today_summary()
-    now = datetime.now().strftime("%H:%M")
-    stop_id = read_state().get('stop_id', '039026550001')
-    return [f'{now} {weather}',] + next_buses(stop_id)
-
 
 if __name__ == '__main__':
     # lines = [
@@ -57,7 +55,5 @@ if __name__ == '__main__':
     # ]
     # update_display(lines)
 
-    lines = get_lines()
-    print(lines)
-    # update_display(lines)
+    pass
 

@@ -16,7 +16,7 @@ from typing import Dict, List, Optional
 
 # ---------- Public API ----------
 
-def get_today_summary(place: str = "Reading", country_code: str = "GB") -> str:
+def get_today_summary(place: str = "Reading", country_code: str = "GB") -> str | None:
     """
     Returns a single compact string with emojis instead of words like 'wind', 'rain', etc.
     Example:
@@ -26,7 +26,7 @@ def get_today_summary(place: str = "Reading", country_code: str = "GB") -> str:
         loc = _geocode(place, country_code)
     except Exception as err:
         print(f'Failed to get weather\n{err}')
-        return '--'
+        return None
 
     base_vars = [
         "weathercode",
@@ -42,12 +42,16 @@ def get_today_summary(place: str = "Reading", country_code: str = "GB") -> str:
         "precipitation_probability",
     ]
 
-    hourly = _fetch_today_hourly_with_fallback(
-        lat=loc["lat"],
-        lon=loc["lon"],
-        primary_vars=base_vars,
-        optional_vars=optional_vars,
-    )
+    try:
+        hourly = _fetch_today_hourly_with_fallback(
+            lat=loc["lat"],
+            lon=loc["lon"],
+            primary_vars=base_vars,
+            optional_vars=optional_vars,
+        )
+    except Exception as err:
+        print(f'Failed to get weather\n{err}')
+        return None
 
     return _build_compact_line(place=loc["name"], hourly=hourly)
 

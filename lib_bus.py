@@ -73,6 +73,9 @@ def extract_bus_times_one_time(siri: Dict[str, Any]) -> List[Dict[str, str]]:
     return rows[:3]
 
 def get_bus_stops():
+    """
+    Returns list of unique bus stops as dictionaries of id, name
+    """
     url = f"{base_url}/api/v1/busstops"
     params = {"api_token": api_key}
     try:
@@ -82,37 +85,19 @@ def get_bus_stops():
         print(f'Failed to get bus stops\n{err}')
         records = [{}]
     else:
-        # print(r.json())
-        records = [{'id': item.get('location_code'), 'name': item.get('description')} for item in r.json()]
-        records = list({rec['id']: rec for rec in records}.values())
-
-        records = list({item['location_code']: {
-            'id': item['location_code'],
-            'name': item.get('description')
-        }
-                           for item in r.json()
-                           if item.get('location_code') is not None
-                       }.values())
-        # print(xmltodict.parse(r.text))
-        # records = extract_bus_times_one_time(xmltodict.parse(r.text))
-
-    #  /api/v1/busstops?api_token={KEY}
+        records = list(
+            {
+                item['location_code']: {'id': item['location_code'], 'name': item.get('description')}
+                for item in r.json()
+                if item.get('location_code') is not None
+            }.values()
+        )
     return records
-    #     [
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    #     {'id': '1234567', 'name': 'Station'},
-    # ]
 
-def next_buses(stop_code: str, as_dict: bool = False):
+def next_buses(stop_code: str) -> list | None:
     """
     Return the next 3 predicted departures for a Reading Buses stop (by Acto-code).
-    Requires an API key from reading-opendata.r2p.com.
+    Requires an API key from reading-opendata.r2p.com
     """
     url = f"{base_url}/api/v1/siri-sm"
     params = {"api_token": api_key, "location": stop_code}
@@ -121,14 +106,9 @@ def next_buses(stop_code: str, as_dict: bool = False):
         r.raise_for_status()
     except Exception as err:
         print(f'Failed to get bus info\n{err}')
-        records = [{}]
+        return None
     else:
         records = extract_bus_times_one_time(xmltodict.parse(r.text))
-
-    if as_dict:
-        return records
-    else:
-        # return [f"{item.get('time', '??:??')} {item.get('line', '??')} {item.get('destination', '?')}" for item in records]
         return [f"{item.get('due_at', '??')}m {item.get('line', '??')} {item.get('destination', '?')}" for item in records]
 
 

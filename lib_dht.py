@@ -40,7 +40,6 @@ try:
 except rrdtool.OperationalError as e:
     # Optional: log error instead of crashing
     print(f"RRD update failed: {e}", file=sys.stderr)
-    sys.exit(1)
 except Exception as e:
     print(f'Error: {e}')
 
