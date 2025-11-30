@@ -1,397 +1,767 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Control Panel</title>
 
-  <!-- Пиксельный шрифт -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg: #0b0f14;
-      --panel: rgba(255,255,255,0.06);
-      --panel-strong: rgba(255,255,255,0.12);
-      --text: #e5ecf5;
-      --muted:#9aa8be;
-      --accent:#70e1ff;
-      --accent2:#9b59ff;
-      --ok:#35d399;
+    /* ===== CSS Variables ===== */
+    :root {
+      --color-bg: #0b0f14;
+      --color-panel: rgba(255, 255, 255, 0.06);
+      --color-panel-strong: rgba(255, 255, 255, 0.12);
+      --color-text: #e5ecf5;
+      --color-text-muted: #9aa8be;
+      --color-accent-primary: #70e1ff;
+      --color-accent-secondary: #9b59ff;
+      --color-success: #35d399;
+
+      --border-radius-sm: 10px;
+      --border-radius-md: 12px;
+      --border-radius-lg: 16px;
+
+      --spacing-xs: 6px;
+      --spacing-sm: 10px;
+      --spacing-md: 12px;
+      --spacing-lg: 18px;
+      --spacing-xl: 24px;
+
+      --transition-fast: 0.15s ease;
+      --transition-base: 0.2s ease;
+
+      --z-dropdown: 1000;
+      --z-toast: 2000;
     }
-    *{ box-sizing: border-box; }
-    html, body { height:100%; }
-    body{
-      margin:0;
-      color:var(--text);
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      color: var(--color-text);
       background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(112,225,255,0.08), transparent 60%),
-        radial-gradient(1200px 600px at 110% 110%, rgba(155,89,255,0.08), transparent 60%),
-        var(--bg);
-      font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+        radial-gradient(1200px 600px at 10% -10%, rgba(112, 225, 255, 0.08), transparent 60%),
+        radial-gradient(1200px 600px at 110% 110%, rgba(155, 89, 255, 0.08), transparent 60%),
+        var(--color-bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    .container{
+
+    /* ===== Layout ===== */
+    .container {
       max-width: 1080px;
       margin: 40px auto;
       padding: 0 20px 40px;
     }
-    .title{
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: .5px;
-      display:flex; align-items:center; gap:12px;
-    }
-    .glow{
-      color: transparent;
-      background: linear-gradient(90deg,var(--accent),var(--accent2));
-      -webkit-background-clip: text; background-clip:text;
-      text-shadow: 0 0 24px rgba(112,225,255,0.25);
-    }
-    .grid{
-      margin-top: 24px;
-      display:grid;
+
+    .grid {
+      display: grid;
       grid-template-columns: repeat(12, 1fr);
       gap: 16px;
+      margin-top: var(--spacing-xl);
     }
-    .card{
-      background: var(--panel);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--panel-strong);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 4001;
-    }
-    .grid, .card { overflow: visible; }
-    .card h3{
-      margin:0 0 12px;
-      font-size: 16px;
-      letter-spacing: .3px;
-    }
-    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
-    input[type="text"],
-    input[type="password"],
-    input[type="search"],
-    .select,
-    .pixel-lines textarea{
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--panel-strong);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      outline: none;
-      transition: border .15s ease, box-shadow .15s ease;
-    }
-    input:focus, .select:focus, .pixel-lines textarea:focus{
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(112,225,255,0.18);
-    }
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid transparent;
-      background: linear-gradient(90deg,var(--accent),var(--accent2));
-      color: #0b0f14; font-weight: 700;
-      cursor: pointer;
-      transition: transform .06s ease, filter .2s ease;
-    }
-    .btn:hover{ filter: brightness(1.05); }
-    .btn:active{ transform: translateY(1px); }
-    .row{ display:flex; gap:10px; }
-    .row > * { flex: 1; }
 
-    /* Поисковый Select */
-    .search-select{
-      position: relative;
-      z-index: 4000;
+    @media (max-width: 900px) {
+      .grid > * {
+        grid-column: span 12 !important;
+      }
     }
-    .options{
-      position: relative;
-      z-index: 4000;
+
+    /* ===== Typography ===== */
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 0;
     }
-    .search-select .dropdown{
-      position:absolute; left:0; right:0; top: calc(100% + 6px);
-      background: var(--bg);
-      border: 1px solid var(--panel-strong);
-      box-shadow: 0 10px 30px rgba(0,0,0,.4);
-      border-radius: 12px;
-      max-height: 260px; overflow: auto; z-index: 10;
-      display:none;
-      z-index: 9999;
+
+    .page-title__gradient {
+      color: transparent;
+      background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+      background-clip: text;
+      -webkit-background-clip: text;
+      text-shadow: 0 0 24px rgba(112, 225, 255, 0.25);
     }
-    .search-select.open .dropdown{ display:block; }
-    .search-select .searchbox{
-      width:100%;
-      padding: 10px 12px;
-      border: none; border-bottom:1px solid var(--panel-strong);
-      background: rgba(255,255,255,0.03);
-      color: var(--text); outline:none;
-      border-radius: 12px 12px 0 0;
+
+    .card__title {
+      margin: 0 0 var(--spacing-md);
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
-    .option{
-      padding: 10px 12px; cursor: pointer; transition: background .1s ease;
-      display:flex; gap:8px; align-items:center;
+
+    .text-muted {
+      color: var(--color-text-muted);
+      font-size: 12px;
     }
-    .option:hover{ background: rgba(255,255,255,0.06); }
-    .option.active{ background: rgba(112,225,255,0.15); }
-    .muted{ color: var(--muted); font-size: 12px; }
-    .pixel-lines textarea{
+
+    /* ===== Card Component ===== */
+    .card {
+      background: var(--color-panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--color-panel-strong);
+      border-radius: var(--border-radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .card--wifi { grid-column: span 6; }
+    .card--bus { grid-column: span 6; }
+    .card--api { grid-column: span 6; }
+    .card--display { grid-column: span 6; }
+    .card--chart { grid-column: span 12; }
+
+    /* ===== Form Elements ===== */
+    .form-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: var(--spacing-xs);
+      font-size: 12px;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: var(--spacing-md) 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--color-panel-strong);
+      border-radius: var(--border-radius-md);
+      color: var(--color-text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(112, 225, 255, 0.18);
+    }
+
+    .form-input::placeholder {
+      color: var(--color-text-muted);
+      opacity: 0.6;
+    }
+
+    .form-textarea {
       font-family: 'Press Start 2P', monospace;
       font-size: 13px;
-      height: 140px;
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+      min-height: 140px;
       resize: vertical;
-      letter-spacing: .5px;
-    }
-    .chart-card{ grid-column: span 12; }
-    .chart-card canvas{ position: relative; z-index: 1; }
-    .footer-note{
-      margin-top: 12px; font-size: 12px; color: var(--muted);
     }
 
-    /* Сетка карточек */
-    .wifi-card{ grid-column: span 6; }
-    .bus-card{ grid-column: span 6; }
-    .bus-card { position: relative; z-index: 20; }
-    .api-card{ grid-column: span 6; }
-    .pixel-card{ grid-column: span 6; }
-    @media (max-width: 900px){
-      .wifi-card,.bus-card,.api-card,.pixel-card,.chart-card{ grid-column: span 12;}
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-md);
     }
 
-    /* Флеш-сообщения */
-    .toast{
-      position: fixed; right: 18px; top: 18px; z-index: 100;
-      display:flex; flex-direction:column; gap:10px;
-    }
-    .toast .item{
-      background: rgba(53, 211, 153, 0.12);
-      border:1px solid rgba(53, 211, 153, 0.35);
-      color:#b8f7dc;
-      padding:10px 12px; border-radius:10px;
-      backdrop-filter: blur(6px);
+    /* ===== Button Component ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: var(--spacing-sm) 14px;
+      background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+      border: none;
+      border-radius: var(--border-radius-md);
+      color: var(--color-bg);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.06s ease, filter var(--transition-base);
     }
 
-    /* Readonly поле в темной теме */
-    .readonly{
-      opacity: .8;
+    .btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    /* ===== Custom Select Component ===== */
+    .custom-select {
+      position: relative;
+    }
+
+    .custom-select__trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: var(--spacing-md) 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--color-panel-strong);
+      border-radius: var(--border-radius-md);
+      color: var(--color-text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .custom-select__trigger:hover {
+      border-color: var(--color-accent-primary);
+    }
+
+    .custom-select__trigger:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px rgba(112, 225, 255, 0.18);
+    }
+
+    .custom-select__trigger::after {
+      content: '▼';
+      font-size: 10px;
+      color: var(--color-text-muted);
+      transition: transform var(--transition-fast);
+    }
+
+    .custom-select--open .custom-select__trigger::after {
+      transform: rotate(180deg);
+    }
+
+    /* ===== Dropdown Component ===== */
+    .dropdown {
+      position: fixed;
+      background: var(--color-bg);
+      border: 1px solid var(--color-panel-strong);
+      border-radius: var(--border-radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      max-height: 280px;
+      overflow: hidden;
+      display: none;
+      z-index: var(--z-dropdown);
+    }
+
+    .dropdown--open {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dropdown__search {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--color-bg);
+      border: none;
+      border-bottom: 1px solid var(--color-panel-strong);
+      border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+      color: var(--color-text);
+      font-size: 14px;
+      outline: none;
+      z-index: 1;
+    }
+
+    .dropdown__search::placeholder {
+      color: var(--color-text-muted);
+      opacity: 0.6;
+    }
+
+    .dropdown__list {
+      overflow-y: auto;
+      max-height: 220px;
+    }
+
+    .dropdown__option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+    }
+
+    .dropdown__option:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .dropdown__option--active {
+      background: rgba(112, 225, 255, 0.15);
+    }
+
+    .dropdown__option[hidden] {
+      display: none;
+    }
+
+    /* ===== Toast Notifications ===== */
+    .toast-container {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      z-index: var(--z-toast);
+    }
+
+    .toast {
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: rgba(53, 211, 153, 0.12);
+      border: 1px solid rgba(53, 211, 153, 0.35);
+      border-radius: var(--border-radius-sm);
+      color: #b8f7dc;
+      backdrop-filter: blur(6px);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* ===== Chart ===== */
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 360px;
+    }
+
+    .chart-note {
+      margin-top: var(--spacing-md);
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    /* ===== Display Panel ===== */
+    .display-panel {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ===== Utility Classes ===== */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="title">
+    <!-- Page Header -->
+    <h1 class="page-title">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3l3 3-3 3-3-3 3-3zm0 12l3 3-3 3-3-3 3-3zM3 12l3-3 3 3-3 3-3-3zm12 0l3-3 3 3-3 3-3-3z"
-              stroke="url(#g)" stroke-width="1.2" />
+              stroke="url(#gradient)" stroke-width="1.2" />
         <defs>
-          <linearGradient id="g" x1="0" y1="0" x2="24" y2="24">
-            <stop stop-color="#70e1ff"/><stop offset="1" stop-color="#9b59ff"/>
+          <linearGradient id="gradient" x1="0" y1="0" x2="24" y2="24">
+            <stop stop-color="#70e1ff"/>
+            <stop offset="1" stop-color="#9b59ff"/>
           </linearGradient>
         </defs>
       </svg>
-      <span>The <span class="glow">Dashboard</span></span>
-    </div>
+      <span>The <span class="page-title__gradient">Bus Box</span></span>
+    </h1>
 
-    <!-- Флеш-сообщения -->
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-      <div class="toast" id="toast">
-        {% for msg in messages %}
-          <div class="item">{{ msg }}</div>
-        {% endfor %}
-      </div>
-      <script>
-        setTimeout(()=>{ const t=document.getElementById('toast'); if(t) t.remove(); }, 3200);
-      </script>
+        <div class="toast-container" id="toastContainer" role="status" aria-live="polite">
+          {% for message in messages %}
+            <div class="toast">{{ message }}</div>
+          {% endfor %}
+        </div>
       {% endif %}
     {% endwith %}
 
+    <!-- Main Grid -->
     <div class="grid">
-      <!-- 1. Wi-Fi -->
-      <div class="card wifi-card">
-        <h3>Wi-Fi настройки</h3>
+      <!-- WiFi Settings Card -->
+      <section class="card card--wifi">
+        <h2 class="card__title">Wi-Fi настройки</h2>
         <form method="post" action="{{ url_for('save_wifi') }}">
-          <label for="ssid">Имя сети (SSID)</label>
-          <input id="ssid" name="ssid" type="text" placeholder="MyWiFi"
-                 value="{{ wifi_ssid or '' }}" autocomplete="off" required>
+          <div class="form-group">
+            <label for="ssid" class="form-label">Имя сети (SSID)</label>
+            <input
+              type="text"
+              id="ssid"
+              name="ssid"
+              class="form-input"
+              placeholder="MyWiFi"
+              value="{{ wifi_ssid or '' }}"
+              autocomplete="off"
+              required
+            >
+          </div>
 
-          <label for="password">Пароль</label>
-          <input id="password" name="password" type="password" placeholder="••••••••"
-                 value="{{ wifi_password or '' }}" autocomplete="new-password" required>
+          <div class="form-group">
+            <label for="password" class="form-label">Пароль</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              value="{{ wifi_password or '' }}"
+              autocomplete="new-password"
+              required
+            >
+          </div>
 
-          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn" type="submit">Сохранить</button>
+          <div class="form-actions">
+            <button type="submit" class="btn">Сохранить</button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <!-- 2. Остановки с поиском по подстроке -->
-      <div class="card bus-card">
-        <h3>Автобусная остановка</h3>
-
+      <!-- Bus Stop Selection Card -->
+      <section class="card card--bus">
+        <h2 class="card__title">Автобусная остановка</h2>
         <form method="post" action="{{ url_for('save_stop') }}">
-          <label>Выберите остановку</label>
+          <div class="form-group">
+            <label for="busStopSelect" class="form-label">Выберите остановку</label>
 
-          <div class="search-select" id="busSelect">
-            <!-- Отображаемое выбранное значение -->
-            <div class="select" role="button" tabindex="0" id="selectDisplay">— выберите остановку —</div>
-
-            <!-- Выпадающее окно -->
-            <div class="dropdown" aria-hidden="true">
-              <input class="searchbox" type="search" placeholder="Поиск по подстроке…" id="searchBox">
-              <div id="options" class="options">
-                {% for stop in bus_stops %}
-                  <div class="option" data-id="{{ stop.id }}" data-name="{{ stop.name }}">
-                    <span>{{ stop.name }}</span>
-                    <span class="muted">#{{ stop.id }}</span>
-                  </div>
-                {% endfor %}
+            <div class="custom-select" id="busStopSelect" data-selected="{{ stop_id or '' }}">
+              <div
+                class="custom-select__trigger"
+                role="button"
+                tabindex="0"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                id="busStopTrigger"
+              >
+                <span id="busStopDisplay">— выберите остановку —</span>
               </div>
+              <input type="hidden" name="stop_id" id="busStopValue" value="{{ stop_id or '' }}">
             </div>
-
-            <!-- Скрытое реальное поле -->
-            <input type="hidden" name="stop_id" id="selectedStopId" value="{{ selected_stop_id or '' }}">
           </div>
 
-          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn" type="submit">Сохранить</button>
+          <div class="form-actions">
+            <button type="submit" class="btn">Сохранить</button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <!-- 3. API Key -->
-      <div class="card api-card">
-        <h3>API Key автобусного сервиса</h3>
+      <!-- API Key Card -->
+      <section class="card card--api">
+        <h2 class="card__title">API Key автобусного сервиса</h2>
         <form method="post" action="{{ url_for('save_api_key') }}">
-          <label for="api_key">API Key</label>
-          <input id="api_key" name="api_key" type="text" placeholder="r2p_xxx_yyy"
-                 value="{{ api_key or '' }}" autocomplete="off" spellcheck="false">
-          <div style="margin-top:12px; display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn" type="submit">Сохранить</button>
+          <div class="form-group">
+            <label for="apiKey" class="form-label">API Key</label>
+            <input
+              type="text"
+              id="apiKey"
+              name="api_key"
+              class="form-input"
+              placeholder="r2p_xxx_yyy"
+              value="{{ api_key or '' }}"
+              autocomplete="off"
+              spellcheck="false"
+            >
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn">Сохранить</button>
           </div>
         </form>
-      </div>
+      </section>
 
-      <!-- 4. Четыре строчки пиксельного текста -->
-      <div class="card pixel-card">
-        <h3>Табло</h3>
-        <pre>{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
-      </div>
+      <!-- Display Panel Card -->
+      <section class="card card--display">
+        <h2 class="card__title">Табло</h2>
+        <pre class="display-panel">{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
+      </section>
 
-      <!-- 5. График -->
-      <div class="card chart-card">
-        <h3>График</h3>
-        <canvas id="chartCanvas" style="width:100%; height: 360px;"></canvas>
-        <div class="footer-note">Здесь будет рендериться график (например, Chart.js). Подключите данные на стороне клиента.</div>
-      </div>
+      <!-- Chart Card -->
+      <section class="card card--chart">
+        <h2 class="card__title">График</h2>
+        <div class="chart-wrapper">
+          <canvas id="chartCanvas"></canvas>
+        </div>
+        <p class="chart-note">
+          Здесь будет рендериться график (например, Chart.js). Подключите данные на стороне клиента.
+        </p>
+      </section>
     </div>
   </div>
 
-  <!-- (опционально) Chart.js — вы можете убрать, если не нужен сейчас -->
+  <!-- Dropdown Portal (rendered outside main structure) -->
+  <div
+    class="dropdown"
+    id="busStopDropdown"
+    role="listbox"
+    aria-label="Выбор автобусной остановки"
+  >
+    <input
+      type="search"
+      class="dropdown__search"
+      id="busStopSearch"
+      placeholder="Поиск по подстроке…"
+      aria-label="Поиск остановок"
+    >
+    <div class="dropdown__list" id="busStopList">
+      {% for stop in bus_stops %}
+        <div
+          class="dropdown__option"
+          role="option"
+          data-id="{{ stop.id }}"
+          data-name="{{ stop.name }}"
+        >
+          <span>{{ stop.name }}</span>
+          <span class="text-muted">#{{ stop.id }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <script>
-    // ====== Быстрый мок графика (можно удалить) ======
-    (function(){
-      const ctx = document.getElementById('chartCanvas');
-      if(!ctx || !window.Chart) return;
+    'use strict';
+
+    // ===== Toast Manager =====
+    (function initToasts() {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      setTimeout(() => {
+        container.style.opacity = '0';
+        container.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => container.remove(), 300);
+      }, 3200);
+    })();
+
+    // ===== Chart Initialization =====
+    (function initChart() {
+      const canvas = document.getElementById('chartCanvas');
+      if (!canvas || !window.Chart) return;
+
       const now = Date.now();
-      const labels = Array.from({length: 12}, (_,i)=> new Date(now - (11-i)*3600_000).toLocaleTimeString());
-      const data = Array.from({length: 12}, ()=> Math.round(30 + Math.random()*10));
-      new Chart(ctx, {
+      const labels = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(now - (11 - i) * 3600000);
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      });
+      const data = Array.from({ length: 12 }, () => Math.round(30 + Math.random() * 10));
+
+      new Chart(canvas, {
         type: 'line',
-        data: { labels, datasets: [{ label: 'Demo', data }] },
+        data: {
+          labels,
+          datasets: [{
+            label: 'Demo',
+            data,
+            borderColor: '#70e1ff',
+            backgroundColor: 'rgba(112, 225, 255, 0.1)',
+            tension: 0.4,
+          }]
+        },
         options: {
           responsive: true,
-          plugins: { legend: { labels: { color: '#cfe7ff'} } },
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#cfe7ff' }
+            }
+          },
           scales: {
-            x: { ticks: { color: '#9aa8be' }, grid: { color: 'rgba(154,168,190,0.15)'} },
-            y: { ticks: { color: '#9aa8be' }, grid: { color: 'rgba(154,168,190,0.15)'} }
+            x: {
+              ticks: { color: '#9aa8be' },
+              grid: { color: 'rgba(154, 168, 190, 0.15)' }
+            },
+            y: {
+              ticks: { color: '#9aa8be' },
+              grid: { color: 'rgba(154, 168, 190, 0.15)' }
+            }
           }
         }
       });
     })();
 
-    // ====== Поисковый dropdown для остановок ======
-    (function(){
-      const root = document.getElementById('busSelect');
-      if(!root) return;
-      const display = root.querySelector('#selectDisplay');
-      const drop = root.querySelector('.dropdown');
-      const search = root.querySelector('#searchBox');
-      const options = Array.from(root.querySelectorAll('.option'));
-      const hidden = root.querySelector('#selectedStopId');
+    // ===== Custom Select with Dropdown =====
+    (function initBusStopSelect() {
+      const selectContainer = document.getElementById('busStopSelect');
+      if (!selectContainer) return;
 
-      //function open(){ root.classList.add('open'); search.focus(); }
-      // В твоём блоке dropdown-логики:
-      function open(){
-        const root = document.getElementById('busSelect');
-        const dd = root.querySelector('.dropdown');
-        const box = root.getBoundingClientRect();
-        dd.style.position = 'fixed';
-        dd.style.left = box.left + 'px';
-        dd.style.top  = (box.bottom + 6) + 'px';
-        dd.style.width = box.width + 'px';
-        root.classList.add('open');
-      }
-      window.addEventListener('scroll', ()=> document.getElementById('busSelect')?.classList.remove('open'), {passive:true});
-      window.addEventListener('resize', ()=> document.getElementById('busSelect')?.classList.remove('open'));
+      const trigger = document.getElementById('busStopTrigger');
+      const display = document.getElementById('busStopDisplay');
+      const hiddenInput = document.getElementById('busStopValue');
+      const dropdown = document.getElementById('busStopDropdown');
+      const searchInput = document.getElementById('busStopSearch');
+      const optionsList = document.getElementById('busStopList');
+      const options = Array.from(optionsList.querySelectorAll('.dropdown__option'));
 
+      let isOpen = false;
 
-      function close(){ root.classList.remove('open'); }
-      function setActive(opt){
-        options.forEach(o => o.classList.toggle('active', o===opt));
-        display.textContent = `${opt.dataset.name}  (#${opt.dataset.id})`;
-        hidden.value = opt.dataset.id;
+      // Initialize selected value
+      const initialId = selectContainer.dataset.selected;
+      if (initialId) {
+        const initialOption = options.find(opt => opt.dataset.id === initialId);
+        if (initialOption) {
+          setActiveOption(initialOption);
+        }
       }
 
-      // Инициализация выбранного значения
-      const initial = hidden.value && options.find(o=>o.dataset.id === hidden.value);
-      if(initial){ setActive(initial); } else { display.textContent = '— выберите остановку —'; }
+      // Position dropdown
+      function positionDropdown() {
+        const rect = trigger.getBoundingClientRect();
+        dropdown.style.left = `${rect.left}px`;
+        dropdown.style.top = `${rect.bottom + 6}px`;
+        dropdown.style.width = `${rect.width}px`;
+      }
 
-      display.addEventListener('click', ()=> root.classList.toggle('open'));
-      display.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') open(); });
+      // Open dropdown
+      function open() {
+        if (isOpen) return;
+        positionDropdown();
+        dropdown.classList.add('dropdown--open');
+        selectContainer.classList.add('custom-select--open');
+        trigger.setAttribute('aria-expanded', 'true');
+        isOpen = true;
+        searchInput.focus();
+      }
 
-      // Фильтр по подстроке в названии или ID
-      function filter(){
-        const q = search.value.trim().toLowerCase();
-        options.forEach(opt=>{
-          const hay = (opt.dataset.name + ' ' + opt.dataset.id).toLowerCase();
-          opt.style.display = hay.includes(q) ? '' : 'none';
+      // Close dropdown
+      function close() {
+        if (!isOpen) return;
+        dropdown.classList.remove('dropdown--open');
+        selectContainer.classList.remove('custom-select--open');
+        trigger.setAttribute('aria-expanded', 'false');
+        searchInput.value = '';
+        filterOptions();
+        isOpen = false;
+      }
+
+      // Set active option
+      function setActiveOption(option) {
+        options.forEach(opt => opt.classList.remove('dropdown__option--active'));
+        option.classList.add('dropdown__option--active');
+        display.textContent = `${option.dataset.name}  (#${option.dataset.id})`;
+        hiddenInput.value = option.dataset.id;
+      }
+
+      // Filter options
+      function filterOptions() {
+        const query = searchInput.value.trim().toLowerCase();
+        options.forEach(option => {
+          const text = `${option.dataset.name} ${option.dataset.id}`.toLowerCase();
+          const matches = text.includes(query);
+          option.hidden = !matches;
         });
       }
-      search.addEventListener('input', filter);
 
-      options.forEach(opt=>{
-        opt.addEventListener('click', ()=>{ setActive(opt); close(); });
+      // Event: Trigger click
+      trigger.addEventListener('click', () => {
+        isOpen ? close() : open();
       });
 
-      // Закрытие по клику вне
-      document.addEventListener('click', (e)=>{ if(!root.contains(e.target)) close(); });
+      // Event: Trigger keyboard
+      trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          isOpen ? close() : open();
+        }
+      });
 
-      // Клавиатура в списке
-      root.addEventListener('keydown', (e)=>{
-        if(!root.classList.contains('open')) return;
-        const visible = options.filter(o=>o.style.display!=='none');
-        const current = visible.findIndex(o=>o.classList.contains('active'));
-        if(e.key==='ArrowDown'){
-          e.preventDefault();
-          const idx = current<0 ? 0 : Math.min(current+1, visible.length-1);
-          setActive(visible[idx]);
-          visible[idx].scrollIntoView({block:'nearest'});
-        } else if(e.key==='ArrowUp'){
-          e.preventDefault();
-          const idx = current<=0 ? 0 : current-1;
-          setActive(visible[idx]);
-          visible[idx].scrollIntoView({block:'nearest'});
-        } else if(e.key==='Enter'){
-          e.preventDefault(); close();
-        } else if(e.key==='Escape'){
+      // Event: Search input
+      searchInput.addEventListener('input', filterOptions);
+
+      // Event: Option click
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          setActiveOption(option);
           close();
+        });
+      });
+
+      // Event: Click outside
+      document.addEventListener('click', (e) => {
+        if (!selectContainer.contains(e.target) && !dropdown.contains(e.target)) {
+          close();
+        }
+      });
+
+      // Event: Window scroll/resize
+      window.addEventListener('scroll', close, { passive: true });
+      window.addEventListener('resize', close);
+
+      // Event: Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (!isOpen) return;
+
+        const visibleOptions = options.filter(opt => !opt.hidden);
+        const currentIndex = visibleOptions.findIndex(opt =>
+          opt.classList.contains('dropdown__option--active')
+        );
+
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            const nextIndex = currentIndex < 0 ? 0 : Math.min(currentIndex + 1, visibleOptions.length - 1);
+            setActiveOption(visibleOptions[nextIndex]);
+            visibleOptions[nextIndex].scrollIntoView({ block: 'nearest' });
+            break;
+
+          case 'ArrowUp':
+            e.preventDefault();
+            const prevIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
+            setActiveOption(visibleOptions[prevIndex]);
+            visibleOptions[prevIndex].scrollIntoView({ block: 'nearest' });
+            break;
+
+          case 'Enter':
+            e.preventDefault();
+            close();
+            break;
+
+          case 'Escape':
+            e.preventDefault();
+            close();
+            trigger.focus();
+            break;
         }
       });
     })();

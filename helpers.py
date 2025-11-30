@@ -9,7 +9,7 @@ def read_state():
             state = json.load(f)
         return state
     else:
-        return {"wifi_ssid": "", "wifi_password": "", "api_key": "", "selected_stop_id": "039026550001"}
+        return {"wifi_ssid": "", "wifi_password": "", "api_key": "", "stop_id": "039026550001"}
 
 def write_state(state):
     with open(state_file, 'w') as f:

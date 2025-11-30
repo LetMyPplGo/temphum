@@ -5,18 +5,19 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from waitress import serve
 
-from bus import get_bus_stops
+from lib_bus import get_bus_stops
 from helpers import read_state, write_state
-from lib_wifi import wait_for_internet, start_ap_mode, start_client_mode, connect_with_fallback
+from lib_wifi import wait_for_internet, start_ap_mode, connect_with_fallback
 from write_oled import get_lines
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = "LdiAPFZomOk5qD1rOBQdM4sich2nTIzjheeiXhEod8wQsMjiwJlyfJ7aULtI"
 
-# TODO: implement get_bus_stops()
-# TODO: implement switching between wifi hotsopt and wifi client
-# TODO: implement automatic detection of wifi connection and fallback to hotspot showing text on the OLED
 # TODO: switch other scripts to use state.json
+# TODO: create proper chart from temphum data and show it on the page
+# TODO: attach the screen
+# TODO: implement function to show text on the screen and use it when connected to AP (service mode)
+# TODO: design the bus box for 3d printing
 
 @app.route("/", methods=["GET"])
 def index():
@@ -27,7 +28,7 @@ def index():
         wifi_password=state["wifi_password"],
         api_key=f'**********************************{state["api_key"][-3:]}',
         bus_stops=get_bus_stops(),
-        selected_stop_id=state["selected_stop_id"],
+        stop_id=state["stop_id"],
         pixel_lines=get_lines(),
     )
 
@@ -50,7 +51,7 @@ def save_stop():
     stop_id = request.form.get("stop_id", "").strip()
 
     state = read_state()
-    state["selected_stop_id"] = stop_id
+    state["stop_id"] = stop_id
     write_state(state)
 
     flash(f"Остановка сохранена: {stop_id or '—'}")

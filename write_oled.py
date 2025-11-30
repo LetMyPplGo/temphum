@@ -4,7 +4,8 @@ from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
-from bus import next_buses
+from helpers import read_state
+from lib_bus import next_buses
 from get_weather import get_today_summary
 
 # --- config ---
@@ -43,16 +44,17 @@ def update_display(lines: list):
 def get_lines():
     weather = get_today_summary()
     now = datetime.now().strftime("%H:%M")
-    return [f'{now} {weather}',] + next_buses('039026550001')
+    stop_id = read_state().get('stop_id', '039026550001')
+    return [f'{now} {weather}',] + next_buses(stop_id)
 
 
 if __name__ == '__main__':
-    lines = [
-        "-= Hello =-",
-        "Weather & Bus",
-        "Reading, Lima crt",
-        "Loading...",
-    ]
+    # lines = [
+    #     "-= Hello =-",
+    #     "Weather & Bus",
+    #     "Reading, Lima crt",
+    #     "Loading...",
+    # ]
     # update_display(lines)
 
     lines = get_lines()

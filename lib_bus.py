@@ -9,9 +9,14 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from helpers import read_state
+
 load_dotenv()
 
 LONDON = ZoneInfo("Europe/London")
+api_key = read_state().get('api_key')
+base_url = "https://reading-opendata.r2p.com"
+
 
 def _parse_iso(iso_ts: Optional[str]) -> Optional[datetime]:
     if not iso_ts:
@@ -68,24 +73,47 @@ def extract_bus_times_one_time(siri: Dict[str, Any]) -> List[Dict[str, str]]:
     return rows[:3]
 
 def get_bus_stops():
-    return [
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-        {'id': '1234567', 'name': 'Station'},
-    ]
+    url = f"{base_url}/api/v1/busstops"
+    params = {"api_token": api_key}
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+    except Exception as err:
+        print(f'Failed to get bus stops\n{err}')
+        records = [{}]
+    else:
+        # print(r.json())
+        records = [{'id': item.get('location_code'), 'name': item.get('description')} for item in r.json()]
+        records = list({rec['id']: rec for rec in records}.values())
+
+        records = list({item['location_code']: {
+            'id': item['location_code'],
+            'name': item.get('description')
+        }
+                           for item in r.json()
+                           if item.get('location_code') is not None
+                       }.values())
+        # print(xmltodict.parse(r.text))
+        # records = extract_bus_times_one_time(xmltodict.parse(r.text))
+
+    #  /api/v1/busstops?api_token={KEY}
+    return records
+    #     [
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    #     {'id': '1234567', 'name': 'Station'},
+    # ]
 
 def next_buses(stop_code: str, as_dict: bool = False):
     """
     Return the next 3 predicted departures for a Reading Buses stop (by Acto-code).
     Requires an API key from reading-opendata.r2p.com.
     """
-    api_key = os.environ.get('ROD_API_KEY')
-    base_url = "https://reading-opendata.r2p.com"
     url = f"{base_url}/api/v1/siri-sm"
     params = {"api_token": api_key, "location": stop_code}
     try:
@@ -109,6 +137,7 @@ if __name__ == '__main__':
     # 039027180001 - Russel street bus stop code according to ChatGPT
     # 039026550001 - Lima Court bus stop
     # print(next_three_reading_buses('039027180001'))
-    print(next_buses('039026550001'))
+    # print(next_buses('039026550001'))
+    print(get_bus_stops())
 
 
