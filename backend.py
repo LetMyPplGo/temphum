@@ -5,12 +5,14 @@ from time import sleep
 
 from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
+from luma.core.interface.serial import i2c
+from luma.oled.device import ssd1306
 from waitress import serve
 
 from get_weather import get_today_summary
 from lib_bus import get_bus_stops, next_buses
 from helpers import read_state, write_state, APMode
-from lib_oled import update_display
+from lib_oled import Display
 from lib_wifi import wait_for_internet, start_ap_mode, connect_with_fallback
 load_dotenv()
 app = Flask(__name__)
@@ -84,7 +86,7 @@ def get_lines():
         return [f'{now} {weather}',] + buses
 
 
-def oled_loop(state: APMode):
+def oled_loop(state: APMode, display):
     """
     The function in a loop updates the OLED
     If AP mode - show AP details (ssid/password/hostname)
@@ -102,20 +104,24 @@ def oled_loop(state: APMode):
     ]
     while True:
         if state.on:
-            update_display(ap_lines)
+            display.update(ap_lines)
         else:
             lines = get_lines()
             if lines is not None:
-                update_display(lines)
+                display.update(lines)
         sleep(10)
 
 
 if __name__ == "__main__":
+    print("Starting service instance, PID =", os.getpid(), flush=True)
+
     if not wait_for_internet():
         start_ap_mode()
         is_ap_mode.on = True
 
-    oled_thread = threading.Thread(target=oled_loop, args=(is_ap_mode,), daemon=True)
+    display = Display()
+
+    oled_thread = threading.Thread(target=oled_loop, args=(is_ap_mode, display), daemon=True)
     oled_thread.start()
 
     AT_DEBUG = bool(int(os.getenv('AT_DEBUG', 0)))

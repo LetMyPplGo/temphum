@@ -17,14 +17,8 @@
 
 ## Prepare
 1. Run install.sh -> it installs needed libs
-2. Copy read_data.py and make_chart.sh into the working dir
+2. Copy all *.py files and make_chart.sh into the working dir
 3. Copy index.html into the web root
-4. Setup cron as shown in cron.tab
-5. If your nginx/lighthttpd is serving from some special place, create a symlink
-`sudo ln -s /etc/temphum/www /home/admin/mainsail/env`
-As temporary solution you can use python http server:
-`cd /etc/temphum/www && python3 -m http.server 8088`
-But better use lighthppd or nginx (I use RPI that serves as klipper+mainsail for 3D printer, so I reuse mainsail nginx for that, see step 5 above)
 
 ## How it works
 Every 10 minutes (cron) read_data.py is executed, it reads temperature and humifity from the DHT22 connected to the GPIO (pins 1,7,9)
