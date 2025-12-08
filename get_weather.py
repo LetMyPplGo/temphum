@@ -125,13 +125,7 @@ def _fetch_today_hourly_with_fallback(
 
 def _build_compact_line(place: str, hourly: Dict[str, List[Optional[float]]]) -> str:
     """
-    Build shortest possible human-readable line using emojis instead of words:
-    - condition icon
-    - place name
-    - temperature range
-    - wind + gusts
-    - rain / snow
-    - precip probability
+    Build compact weather line with temperature, rain possibility and wind
     """
     temps = hourly.get("temperature_2m") or []
     t_min = _min_nan(temps)
@@ -177,14 +171,14 @@ def _build_compact_line(place: str, hourly: Dict[str, List[Optional[float]]]) ->
 
     # Precip probability
     if p_max is not None and p_max > 0:
-        parts.append(f"{p_max:.0f}%")
+        parts.append(f"R{p_max:.0f}%")
 
-    # Wind + gusts
-    if w_max is not None and w_max > 0:
-        if g_max is not None and g_max > w_max:
-            parts.append(f"W{w_max:.0f}↗{g_max:.0f}m/s")
-        else:
-            parts.append(f"W{w_max:.0f}m/s")
+    # # Wind + gusts
+    # if w_max is not None and w_max > 0:
+    #     if g_max is not None and g_max > w_max:
+    #         parts.append(f"W{w_max:.0f}↗{g_max:.0f}m/s")
+    #     else:
+    #         parts.append(f"W{w_max:.0f}m/s")
 
     return " ".join(parts)
 

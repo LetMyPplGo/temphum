@@ -94,6 +94,22 @@ def get_bus_stops():
         )
     return records
 
+def get_bus_coordinates(stop_id):
+    url = f"{base_url}/api/v1/busstops"
+    params = {"api_token": api_key}
+    try:
+        r = requests.get(url, params=params, timeout=10)
+        r.raise_for_status()
+    except Exception as err:
+        print(f'Failed to get bus stops\n{err}')
+        records = [{}]
+    else:
+        for item in r.json():
+            if item.get('location_code', '') == stop_id:
+                return f"{item.get('latitude', 1)},{item.get('longitude', 1)}"
+    return '1,1'
+
+
 def next_buses(stop_code: str) -> list | None:
     """
     Return the next 3 predicted departures for a Reading Buses stop (by Acto-code).
@@ -118,6 +134,7 @@ if __name__ == '__main__':
     # 039026550001 - Lima Court bus stop
     # print(next_three_reading_buses('039027180001'))
     # print(next_buses('039026550001'))
-    print(get_bus_stops())
+    get_bus_stops()
+    # print(get_bus_stops())
 
 

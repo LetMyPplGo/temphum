@@ -483,6 +483,13 @@
             <button type="submit" class="btn">Save</button>
           </div>
         </form>
+
+        <iframe
+                style="border:0"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q={{coordinates}}&z=15&output=embed">
+        </iframe>
       </section>
 
       <!-- API Key Card -->
@@ -514,6 +521,18 @@
         <h2 class="card__title">Display</h2>
         <pre class="display-panel">{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
       </section>
+
+<!--      &lt;!&ndash; Display Map Card &ndash;&gt;-->
+<!--      <section class="card">-->
+<!--        <iframe-->
+<!--                width="600"-->
+<!--                height="450"-->
+<!--                style="border:0"-->
+<!--                loading="lazy"-->
+<!--                referrerpolicy="no-referrer-when-downgrade"-->
+<!--                src="https://www.google.com/maps?q={{coordinates}}&z=15&output=embed">-->
+<!--        </iframe>-->
+<!--      </section>-->
 
       <!-- Chart Card ->
       <section class="card card--chart">

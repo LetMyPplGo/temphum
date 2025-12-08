@@ -1,8 +1,15 @@
-adafruit-blinka
-adafruit-circuitpython-dht
+#adafruit-blinka
+#adafruit-circuitpython-dht
 pillow
 smbus2
 luma.oled
 xmltodict
 flask
 waitress
+pychromecast
+gtts
+zeep
+pandas
+pyproj
+openpyxl
+odfpy
