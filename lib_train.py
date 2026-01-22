@@ -1,21 +1,3 @@
-#
-# Open Live Departure Boards Web Service (OpenLDBWS) API Demonstrator
-# Copyright (C)2018-2024 OpenTrainTimes Ltd.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 from zeep import Client, Settings, xsd
 from zeep.plugins import HistoryPlugin
 import json
@@ -28,40 +10,6 @@ from helpers import read_state
 
 LDB_TOKEN = read_state().get('train_token')
 WSDL = 'http://lite.realtime.nationalrail.co.uk/OpenLDBWS/wsdl.aspx?ver=2021-11-01'
-
-def _get_trains(station_from: str, station_to: str):
-    if LDB_TOKEN == '':
-        raise Exception("Please configure your OpenLDBWS token in getDepartureBoardExample!")
-
-    settings = Settings(strict=False)
-
-    history = HistoryPlugin()
-
-    client = Client(wsdl=WSDL, settings=settings, plugins=[history])
-
-    header = xsd.Element(
-        '{http://thalesgroup.com/RTTI/2013-11-28/Token/types}AccessToken',
-        xsd.ComplexType([
-            xsd.Element(
-                '{http://thalesgroup.com/RTTI/2013-11-28/Token/types}TokenValue',
-                xsd.String()),
-        ])
-    )
-    header_value = header(TokenValue=LDB_TOKEN)
-
-    # ret = client.service.GetDepartureBoard(numRows=10, crs=station, _soapheaders=[header_value])
-    ret = client.service.GetDepBoardWithDetails(numRows=10, crs=station_from, _soapheaders=[header_value])
-    filtered_services = [
-        svc for svc in ret.trainServices.service
-        if getattr(svc, "subsequentCallingPoints", None)
-           and svc.subsequentCallingPoints.callingPointList
-           and any(
-            cp.crs == station_to
-            for cpl in svc.subsequentCallingPoints.callingPointList
-            for cp in cpl.callingPoint
-        )
-    ]
-    return filtered_services
 
 
 def convert_stations(xlsx_path: str | Path, out_path: str | Path) -> list[dict]:
@@ -144,18 +92,69 @@ def convert_stations(xlsx_path: str | Path, out_path: str | Path) -> list[dict]:
     return stations
 
 
+def get_train_stops():
+    file_name = 'train_stations.json'
+    with open(file_name, 'r') as f:
+        return json.load(f)
+
+def get_train_coordinates(crs):
+    stops = get_train_stops()
+    for stop in stops:
+        if stop.get('crs') == crs:
+            return f'{stop.get("latitude")},{stop.get("longitude")}'
+
+def _get_trains(station_from: str, station_to: str):
+    settings = Settings(strict=False)
+    history = HistoryPlugin()
+    client = Client(wsdl=WSDL, settings=settings, plugins=[history])
+    header = xsd.Element(
+        '{http://thalesgroup.com/RTTI/2013-11-28/Token/types}AccessToken',
+        xsd.ComplexType([
+            xsd.Element(
+                '{http://thalesgroup.com/RTTI/2013-11-28/Token/types}TokenValue',
+                xsd.String()),
+        ])
+    )
+    header_value = header(TokenValue=LDB_TOKEN)
+
+    ret = client.service.GetDepBoardWithDetails(
+        numRows=50,
+        crs=station_from,
+        _soapheaders=[header_value],
+        timeOffset=0,
+        timeWindow=240,
+    )
+
+    filtered_services = [
+        svc for svc in ret.trainServices.service
+        if getattr(svc, "subsequentCallingPoints", None)
+           and svc.subsequentCallingPoints.callingPointList
+           and any(
+            cp.crs == station_to
+            for cpl in svc.subsequentCallingPoints.callingPointList
+            for cp in cpl.callingPoint
+        )
+    ]
+    return filtered_services
+
+
 def minutes_between(start_st: str, end_st: str) -> int:
     fmt = "%H:%M"
     start = datetime.strptime(start_st, fmt)
     end = datetime.strptime(end_st, fmt)
-    if end <= start:
-        end += timedelta(days=1)
-    return int((end - start).total_seconds() // 60)
+    diff = (end - start).total_seconds() / 60
+    # If end is before start, add 24 hours worth of minutes, if it's more than 12h forward, treat as backward
+    if diff < 0:
+        diff += 1440  # 24 * 60
+    if diff > 720:
+        diff -= 1440
+
+    return int(diff)
 
 def get_trains():
     state = read_state()
-    station_from = state.get('station_from', 'RDG')
-    station_to = state.get('station_to', 'PAD')
+    station_from = state.get('train_from', 'RDG')
+    station_to = state.get('train_to', 'PAD')
     services = _get_trains(station_from, station_to)
     lines = []
     for t in services:
@@ -166,19 +165,22 @@ def get_trains():
             if cp.crs == station_to
         )
         duration = minutes_between(t.std, t.subsequentCallingPoints.callingPointList[0].callingPoint[-1].st)
-        platform = f'p.{t.platform}' if {t.platform} is not None else ''
+        platform = f'p{t.platform}' if t.platform is not None else ''
         est = t.etd if t.etd != 'On time' else t.std
+        time_to_train = minutes_between(datetime.now().strftime("%H:%M"), est)
         # Long format
         # stops = len(t.subsequentCallingPoints.callingPointList[0].callingPoint)
         # lines.append(f'{est} {platform} {t.operatorCode} to {t.destination.location[0].locationName}, {duration}m, {stops} stop{"s" if stops > 1 else ""} ')
         # Short format
         # lines.append(f'{est} {platform} {t.operatorCode} to {t.destination.location[0].locationName}, {duration}m')
         # Tiny format
-        lines.append(f'{est}->{my_stop_time} {platform} {duration}m')
+        # lines.append(f'{est}->{my_stop_time} {platform} {duration}m')
+        # lines.append(f'{est} {time_to_train}m {platform} {duration}m')
+        lines.append(f'{est} {platform} {duration}m')
     # return '\n'.join(lines)
-    return lines
+    return sorted(lines)
 
 
 if __name__ == '__main__':
     # convert_stations('table-6329-station-attributes-for-all-mainline-stations.ods', 'train_stations.json')
-    print(get_trains())
+    print('\n'.join(get_trains()))

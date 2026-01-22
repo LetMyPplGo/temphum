@@ -1,11 +1,6 @@
 import pychromecast
-from pychromecast import discovery
 from gtts import gTTS
 import time
-import os
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import threading
-
 from helpers import get_local_ip
 
 

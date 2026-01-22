@@ -76,6 +76,59 @@
       margin-top: var(--spacing-xl);
     }
 
+    .tabs {
+      margin-top: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .tabs__list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+    }
+
+    .tabs__list form {
+      margin: 0;
+    }
+
+    .tab-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-panel-strong);
+      background: rgba(255, 255, 255, 0.03);
+      color: #d7e2f2;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .tab-btn:hover {
+      border-color: #6aa4c9;
+    }
+
+    .tab-btn--active {
+      background: rgba(106, 164, 201, 0.18);
+      border-color: rgba(106, 164, 201, 0.55);
+      color: #eef5ff;
+    }
+
+    .tab-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .tab-actions form {
+      margin: 0;
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: center;
+    }
+
     @media (max-width: 900px) {
       .grid > * {
         grid-column: span 12 !important;
@@ -128,6 +181,7 @@
     .card--api { grid-column: span 6; }
     .card--display { grid-column: span 6; }
     .card--chart { grid-column: span 12; }
+    .card--tab { grid-column: span 6; }
 
     /* ===== Form Elements ===== */
     .form-group {
@@ -199,6 +253,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.06s ease, filter var(--transition-base);
+      white-space: nowrap;
     }
 
     .btn:hover {
@@ -417,122 +472,229 @@
       {% endif %}
     {% endwith %}
 
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tabs__list" role="tablist" aria-label="Configuration tabs">
+        {% for t in tabs %}
+          <form method="post" action="{{ url_for('select_tab') }}">
+            <input type="hidden" name="tab_id" value="{{ t.id }}">
+            <button
+              type="submit"
+              class="tab-btn {% if t.id == active_tab_id %}tab-btn--active{% endif %}"
+              role="tab"
+              aria-selected="{% if t.id == active_tab_id %}true{% else %}false{% endif %}"
+            >
+              {{ t.name }}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+    </div>
+
     <!-- Main Grid -->
     <div class="grid">
-      <!-- WiFi Settings Card -->
-      <section class="card card--wifi">
-        <h2 class="card__title">Wi-Fi settigns</h2>
-        <form method="post" action="{{ url_for('save_wifi') }}">
-          <div class="form-group">
-            <label for="ssid" class="form-label">Network name (SSID)</label>
-            <input
-              type="text"
-              id="ssid"
-              name="ssid"
-              class="form-input"
-              placeholder="MyWiFi"
-              value="{{ wifi_ssid or '' }}"
-              autocomplete="off"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="password" class="form-label">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              class="form-input"
-              placeholder="••••••••"
-              value="{{ wifi_password or '' }}"
-              autocomplete="new-password"
-              required
-            >
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn">Save</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Bus Stop Selection Card -->
-      <section class="card card--bus">
-        <h2 class="card__title">Bus stop</h2>
-        <form method="post" action="{{ url_for('save_stop') }}">
-          <div class="form-group">
-            <label for="busStopSelect" class="form-label">Pick your stop</label>
-
-            <div class="custom-select" id="busStopSelect" data-selected="{{ stop_id or '' }}">
-              <div
-                class="custom-select__trigger"
-                role="button"
-                tabindex="0"
-                aria-haspopup="listbox"
-                aria-expanded="false"
-                id="busStopTrigger"
+      {% if tab.id != 'settings' %}
+        <!-- Tab Settings Card -->
+        <section class="card card--tab">
+          <h2 class="card__title">Tab settings</h2>
+          <div class="tab-actions">
+            <form method="post" action="{{ url_for('save_tab_name') }}">
+              <input type="hidden" name="tab_id" value="{{ tab.id }}">
+              <input
+                type="text"
+                id="tabName"
+                name="tab_name"
+                class="form-input"
+                placeholder="e.g. Home, Office"
+                value="{{ tab.name or '' }}"
+                autocomplete="off"
+                required
               >
-                <span id="busStopDisplay">— pick you stop —</span>
-              </div>
-              <input type="hidden" name="stop_id" id="busStopValue" value="{{ stop_id or '' }}">
+              <button type="submit" class="btn">Save</button>
+            </form>
+            <form method="post" action="{{ url_for('remove_tab') }}">
+              <input type="hidden" name="tab_id" value="{{ tab.id }}">
+              <button type="submit" class="btn">Remove tab</button>
+            </form>
+            <form method="post" action="{{ url_for('add_tab') }}">
+              <input
+                type="text"
+                name="tab_name"
+                class="form-input"
+                placeholder="New tab name"
+                autocomplete="off"
+              >
+              <button type="submit" class="btn">Add tab</button>
+            </form>
+          </div>
+        </section>
+      {% endif %}
+      {% if tab.id == 'settings' %}
+        <!-- WiFi Settings Card -->
+        <section class="card card--wifi">
+          <h2 class="card__title">Wi-Fi settigns</h2>
+          <form method="post" action="{{ url_for('save_wifi') }}">
+            <div class="form-group">
+              <label for="ssid" class="form-label">Network name (SSID)</label>
+              <input
+                type="text"
+                id="ssid"
+                name="ssid"
+                class="form-input"
+                placeholder="MyWiFi"
+                value="{{ wifi_ssid or '' }}"
+                autocomplete="off"
+                required
+              >
             </div>
-          </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn">Save</button>
-          </div>
-        </form>
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-input"
+                placeholder="••••••••"
+                value="{{ wifi_password or '' }}"
+                autocomplete="new-password"
+                required
+              >
+            </div>
 
-        <iframe
-                style="border:0"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps?q={{coordinates}}&z=15&output=embed">
-        </iframe>
-      </section>
+            <div class="form-actions">
+              <button type="submit" class="btn">Save</button>
+            </div>
+          </form>
+        </section>
 
-      <!-- API Key Card -->
-      <section class="card card--api">
-        <h2 class="card__title">API Key for https://reading-opendata.r2p.com</h2>
-        <form method="post" action="{{ url_for('save_api_key') }}">
-          <div class="form-group">
-            <label for="apiKey" class="form-label">API Key</label>
-            <input
-              type="text"
-              id="apiKey"
-              name="api_key"
-              class="form-input"
-              placeholder="r2p_xxx_yyy"
-              value="{{ api_key or '' }}"
-              autocomplete="off"
-              spellcheck="false"
-            >
-          </div>
+        <!-- API Key Card -->
+        <section class="card card--api">
+          <h2 class="card__title">API Key for https://reading-opendata.r2p.com</h2>
+          <form method="post" action="{{ url_for('save_api_key') }}">
+            <div class="form-group">
+              <label for="apiKey" class="form-label">API Key</label>
+              <input
+                type="text"
+                id="apiKey"
+                name="api_key"
+                class="form-input"
+                placeholder="r2p_xxx_yyy"
+                value="{{ api_key or '' }}"
+                autocomplete="off"
+                spellcheck="false"
+              >
+            </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn">Save</button>
-          </div>
-        </form>
-      </section>
+            <div class="form-actions">
+              <button type="submit" class="btn">Save</button>
+            </div>
+          </form>
+        </section>
+      {% endif %}
 
-      <!-- Display Panel Card -->
-      <section class="card card--display">
-        <h2 class="card__title">Display</h2>
-        <pre class="display-panel">{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
-      </section>
+      {% if tab.id != 'settings' %}
+        <!-- Bus Stop Selection Card -->
+        <section class="card card--bus">
+          <h2 class="card__title">Bus stop</h2>
+          <form method="post" action="{{ url_for('save_stop') }}">
+            <input type="hidden" name="tab_id" value="{{ tab.id }}">
+            <div class="form-group">
+              <label for="busStopSelect" class="form-label">Pick your stop</label>
 
-<!--      &lt;!&ndash; Display Map Card &ndash;&gt;-->
-<!--      <section class="card">-->
-<!--        <iframe-->
-<!--                width="600"-->
-<!--                height="450"-->
-<!--                style="border:0"-->
-<!--                loading="lazy"-->
-<!--                referrerpolicy="no-referrer-when-downgrade"-->
-<!--                src="https://www.google.com/maps?q={{coordinates}}&z=15&output=embed">-->
-<!--        </iframe>-->
-<!--      </section>-->
+              <div class="custom-select" id="busStopSelect" data-selected="{{ stop_id or '' }}">
+                <div
+                  class="custom-select__trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  id="busStopTrigger"
+                >
+                  <span id="busStopDisplay">— pick you stop —</span>
+                </div>
+                <input type="hidden" name="stop_id" id="busStopValue" value="{{ stop_id or '' }}">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Save</button>
+            </div>
+          </form>
+
+          <iframe
+                  style="border:0"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  src="https://www.google.com/maps?q={{coordinates}}&z=15&output=embed">
+          </iframe>
+        </section>
+
+        <!-- Train Selection Card -->
+        <section class="card card--bus">
+          <h2 class="card__title">Train stops</h2>
+          <form method="post" action="{{ url_for('save_train_stop') }}">
+            <input type="hidden" name="tab_id" value="{{ tab.id }}">
+            <div class="form-group">
+
+              <label for="trainFromSelect" class="form-label">Pick departure stop</label>
+              <div class="custom-select" id="trainFromSelect" data-selected="{{ train_from or '' }}">
+                <div
+                  class="custom-select__trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  id="trainFromTrigger"
+                >
+                  <span id="trainFromDisplay">— pick you stop —</span>
+                </div>
+                <input type="hidden" name="train_from" id="trainFromValue" value="{{ train_from or '' }}">
+              </div>
+
+              <label for="trainToSelect" class="form-label">Pick destination stop</label>
+              <div class="custom-select" id="trainToSelect" data-selected="{{ train_to or '' }}">
+                <div
+                  class="custom-select__trigger"
+                  role="button"
+                  tabindex="0"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  id="trainToTrigger"
+                >
+                  <span id="trainToDisplay">— pick you stop —</span>
+                </div>
+                <input type="hidden" name="train_to" id="trainToValue" value="{{ train_to or '' }}">
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Save</button>
+            </div>
+          </form>
+
+          <!--iframe
+                  style="border:0"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  src="https://www.google.com/maps?q={{train_coordinates}}&z=15&output=embed">
+          </iframe-->
+            <!--src="https://www.google.com/maps/embed/v1/directions?key={{google_api_key}}&origin={{coordinates_from}}&destination={{coordinates_to}}&mode=transit"-->
+          <iframe
+            src="https://www.google.com/maps/embed/v1/directions?key={{google_api_key}}&origin={{coordinates_from}}&destination={{coordinates_to}}&mode=transit"
+            width="400"
+            height="200">
+          </iframe>
+        </section>
+
+        <!-- Display Panel Card -->
+        <section class="card card--display">
+          <h2 class="card__title">Display</h2>
+          <pre class="display-panel">{% if pixel_lines %}{{ "\n".join(pixel_lines) }}{% endif %}</pre>
+        </section>
+      {% endif %}
+
 
       <!-- Chart Card ->
       <section class="card card--chart">
@@ -548,7 +710,7 @@
     </div>
   </div>
 
-  <!-- Dropdown Portal (rendered outside main structure) -->
+  <!-- Bus stop. Dropdown Portal (rendered outside main structure) -->
   <div
     class="dropdown"
     id="busStopDropdown"
@@ -572,6 +734,64 @@
         >
           <span>{{ stop.name }}</span>
           <span class="text-muted">#{{ stop.id }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Train From. Dropdown Portal (rendered outside main structure) -->
+  <div
+    class="dropdown"
+    id="trainFromDropdown"
+    role="listbox"
+    aria-label="Pick train departure stop"
+  >
+    <input
+      type="search"
+      class="dropdown__search"
+      id="trainFromSearch"
+      placeholder="Search…"
+      aria-label="Train stop search"
+    >
+    <div class="dropdown__list" id="trainFromList">
+      {% for stop in train_stops %}
+        <div
+          class="dropdown__option"
+          role="option"
+          data-id="{{ stop.crs }}"
+          data-name="{{ stop.name }}"
+        >
+          <span>{{ stop.name }}</span>
+          <span class="text-muted">#{{ stop.crs }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Train To. Dropdown Portal (rendered outside main structure) -->
+  <div
+    class="dropdown"
+    id="trainToDropdown"
+    role="listbox"
+    aria-label="Pick train destination stop"
+  >
+    <input
+      type="search"
+      class="dropdown__search"
+      id="trainToSearch"
+      placeholder="Search…"
+      aria-label="Train stop search"
+    >
+    <div class="dropdown__list" id="trainToList">
+      {% for stop in train_stops %}
+        <div
+          class="dropdown__option"
+          role="option"
+          data-id="{{ stop.crs }}"
+          data-name="{{ stop.name }}"
+        >
+          <span>{{ stop.name }}</span>
+          <span class="text-muted">#{{ stop.crs }}</span>
         </div>
       {% endfor %}
     </div>
@@ -642,16 +862,16 @@
     })();
 
     // ===== Custom Select with Dropdown =====
-    (function initBusStopSelect() {
-      const selectContainer = document.getElementById('busStopSelect');
+    function initSelect(prefix) {
+      const selectContainer = document.getElementById(prefix + 'Select');
       if (!selectContainer) return;
 
-      const trigger = document.getElementById('busStopTrigger');
-      const display = document.getElementById('busStopDisplay');
-      const hiddenInput = document.getElementById('busStopValue');
-      const dropdown = document.getElementById('busStopDropdown');
-      const searchInput = document.getElementById('busStopSearch');
-      const optionsList = document.getElementById('busStopList');
+      const trigger = document.getElementById(prefix + 'Trigger');
+      const display = document.getElementById(prefix + 'Display');
+      const hiddenInput = document.getElementById(prefix + 'Value');
+      const dropdown = document.getElementById(prefix + 'Dropdown');
+      const searchInput = document.getElementById(prefix + 'Search');
+      const optionsList = document.getElementById(prefix + 'List');
       const options = Array.from(optionsList.querySelectorAll('.dropdown__option'));
 
       let isOpen = false;
@@ -784,7 +1004,11 @@
             break;
         }
       });
-    })();
+    };
+
+    initSelect('busStop');
+    initSelect('trainFrom');
+    initSelect('trainTo');
   </script>
 </body>
 </html>

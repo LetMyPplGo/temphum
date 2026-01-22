@@ -3,6 +3,8 @@ from time import sleep
 
 from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
+from luma.core.interface.serial import spi
+from luma.lcd.device import st7735
 from PIL import Image, ImageDraw, ImageFont
 
 # --- config ---
@@ -11,9 +13,12 @@ ROTATION = 0  # 0, 1, 2, 3 if you need to rotate
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"  # good for EN/RU
 FONT_SIZE = 15  # 15+1 * 4 = 64px tall
 
-# --- init display ---
-# serial = i2c(port=1, address=I2C_ADDRESS)
-# device = ssd1306(serial, rotate=ROTATION)  # 128x64
+def get_display(_type: str = 'SPI'):
+    if _type == 'SPI':
+        return DisplaySPI()
+    elif _type == 'IIC':
+        return DisplayIIC()
+    print(f'Unknown display was requested: {_type}')
 
 
 def update_display_dbg(lines: list):
@@ -21,7 +26,7 @@ def update_display_dbg(lines: list):
         f.write('\n'.join(lines))
 
 
-class Display:
+class _Display:
     def __init__(self):
         self.w = self.h = self.device = None
         self.init_device()
@@ -37,12 +42,13 @@ class Display:
         text_width = bbox[2] - bbox[0]
         self.weather_start = text_width + 4
         self.rectangle = (text_width + 1, 14, self.w, self.h)
-
+        self._log = []
 
     def init_device(self):
-        serial = i2c(port=1, address=0x3C)
-        self.device = ssd1306(serial, rotate=0)
-        self.w, self.h = self.device.width, self.device.height
+        print('To be implemented in child class')
+
+    def new_image(self):
+        print('To be implemented in child class')
 
     def update(self, lines: list):
         if self.lines != lines:
@@ -60,10 +66,9 @@ class Display:
             except Exception as err:
                 print(f'Still failing\n{err}')
 
-
     def scroll_loop(self):
         while True:
-            img = Image.new("1", (self.w, self.h), 0)  # 1-bit image
+            img = self.new_image()
             draw = ImageDraw.Draw(img)
 
             y = 0
@@ -129,30 +134,81 @@ class Display:
         print('showing now')
         self.display(img)
 
+    def clear(self):
+        self._log = []
+        self.log()
+
+    def log(self, text=''):
+        self._log.append(text)
+        self.update(self._log)
+
+
+class DisplaySPI(_Display):
+    def init_device(self):
+        serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=24)
+        self.device = st7735(serial, width=160, height=128, rotate=0)
+        self.w, self.h = self.device.width, self.device.height
+
+    def new_image(self):
+        return Image.new("RGB", (self.w, self.h), "black")
+
+
+class DisplayIIC(_Display):
+    def init_device(self):
+        serial = i2c(port=1, address=0x3C)
+        self.device = ssd1306(serial, rotate=0)
+        self.w, self.h = self.device.width, self.device.height
+
+    def new_image(self):
+        return Image.new("1", (self.w, self.h), 0)
+
+
+# # LCD 20x4
+# class DisplayLCD:
+#     def update(self, text):
+#         from RPLCD.i2c import CharLCD
+#         lcd = CharLCD('PCF8574', address=0x27, port=1, cols=20, rows=4)
+#         lcd.clear()
+#         lcd.write_string('Hello!\nLine2\nLine3\nLine4')
+
+# class DisplaySPI:
+#     def __init__(self):
+#         serial = spi(port=0, device=0, gpio_DC=25, gpio_RST=24)
+#         self.device = st7735(serial, width=160, height=128, rotate=0)
+#
+#     def update(self, text):
+#         img = Image.new("RGB", (160, 128), "black")
+#         draw = ImageDraw.Draw(img)
+#         draw.text((10, 10), text, fill="white")
+#         self.device.display(img)
+
 
 if __name__ == '__main__':
-    # lines = [
-    #     "-= Hello =-",
-    #     "Weather & Bus",
-    #     "Reading, Lima crt",
-    #     "Loading...",
-    # ]
+    lines = [
+        "-= Hello =-",
+        "Weather & Bus",
+        "Reading, Lima crt",
+        "Loading...",
+    ]
     # update_display(lines)
-    data = {
-        'time': '12:12',
-        'stop': 'Lima crt.',
-        'times': [
-            '12m 26',
-            '23m 2a',
-            '888m 33b'
-        ],
-        'weather': [
-            '11/-11C',
-            '82%',
-            'W23>24m/s'
-        ],
-    }
-    display = Display()
-    while True:
-        display.update_new(data)
-        sleep(0.5)
+    # data = {
+    #     'time': '12:12',
+    #     'stop': 'Lima crt.',
+    #     'times': [
+    #         '12m 26',
+    #         '23m 2a',
+    #         '888m 33b'
+    #     ],
+    #     'weather': [
+    #         '11/-11C',
+    #         '82%',
+    #         'W23>24m/s'
+    #     ],
+    # }
+    # display = Display()
+    # while True:
+    #     display.update_new(data)
+    #     sleep(0.5)
+    display = get_display('SPI')
+    display.update(lines)
+    sleep(10)

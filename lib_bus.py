@@ -1,4 +1,6 @@
+import json
 import os
+from time import time
 
 import requests
 from datetime import datetime, timezone
@@ -14,7 +16,6 @@ from helpers import read_state
 load_dotenv()
 
 LONDON = ZoneInfo("Europe/London")
-api_key = read_state().get('api_key')
 base_url = "https://reading-opendata.r2p.com"
 
 
@@ -72,41 +73,43 @@ def extract_bus_times_one_time(siri: Dict[str, Any]) -> List[Dict[str, str]]:
 
     return rows[:3]
 
-def get_bus_stops():
+def get_bus_stops(reload: bool = False):
     """
     Returns list of unique bus stops as dictionaries of id, name
+    Takes the data from local file.
+    If reload=True, then takes data from API and saves to the file
     """
-    url = f"{base_url}/api/v1/busstops"
-    params = {"api_token": api_key}
-    try:
-        r = requests.get(url, params=params, timeout=10)
-        r.raise_for_status()
-    except Exception as err:
-        print(f'Failed to get bus stops\n{err}')
-        records = [{}]
+    file_name = 'bus_stops.json'
+    if not reload and os.path.exists(file_name):
+        with open(file_name, 'r') as f:
+            return json.load(f)
     else:
-        records = list(
-            {
-                item['location_code']: {'id': item['location_code'], 'name': item.get('description')}
-                for item in r.json()
-                if item.get('location_code') is not None
-            }.values()
-        )
-    return records
+        url = f"{base_url}/api/v1/busstops"
+        api_key = read_state().get('api_key')
+        params = {"api_token": api_key}
+        try:
+            r = requests.get(url, params=params, timeout=10)
+            r.raise_for_status()
+        except Exception as err:
+            print(f'Failed to get bus stops\n{err}')
+            records = [{}]
+        else:
+            records = list(
+                {
+                    item['location_code']: {'id': item['location_code'], 'name': item.get('description'), 'latitude': item.get('latitude'), 'longitude': item.get('longitude')}
+                    for item in r.json()
+                    if item.get('location_code') is not None
+                }.values()
+            )
+        with open(file_name, 'w') as f:
+            json.dump(records, f)
+        return records
 
 def get_bus_coordinates(stop_id):
-    url = f"{base_url}/api/v1/busstops"
-    params = {"api_token": api_key}
-    try:
-        r = requests.get(url, params=params, timeout=10)
-        r.raise_for_status()
-    except Exception as err:
-        print(f'Failed to get bus stops\n{err}')
-        records = [{}]
-    else:
-        for item in r.json():
-            if item.get('location_code', '') == stop_id:
-                return f"{item.get('latitude', 1)},{item.get('longitude', 1)}"
+    stops = get_bus_stops()
+    for item in stops:
+        if item.get('id', '') == stop_id:
+            return f"{item.get('latitude', 1)},{item.get('longitude', 1)}"
     return '1,1'
 
 
@@ -116,6 +119,7 @@ def next_buses(stop_code: str) -> list | None:
     Requires an API key from reading-opendata.r2p.com
     """
     url = f"{base_url}/api/v1/siri-sm"
+    api_key = read_state().get('api_key')
     params = {"api_token": api_key, "location": stop_code}
     try:
         r = requests.get(url, params=params, timeout=10)
@@ -132,9 +136,6 @@ def next_buses(stop_code: str) -> list | None:
 if __name__ == '__main__':
     # 039027180001 - Russel street bus stop code according to ChatGPT
     # 039026550001 - Lima Court bus stop
-    # print(next_three_reading_buses('039027180001'))
-    # print(next_buses('039026550001'))
-    get_bus_stops()
-    # print(get_bus_stops())
+    print(get_bus_stops())
 
 

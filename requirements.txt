@@ -3,6 +3,10 @@
 pillow
 smbus2
 luma.oled
+luma.core
+luma.lcd
+RPi.GPIO
+spidev
 xmltodict
 flask
 waitress
@@ -13,3 +17,6 @@ pandas
 pyproj
 openpyxl
 odfpy
+
+# for LCD 20x4
+#RPLCD
