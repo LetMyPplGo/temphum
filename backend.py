@@ -113,6 +113,20 @@ def save_train_stop():
     flash(f"Train stops are saved: {train_from} - {train_to}")
     return redirect(url_for("index"))
 
+@app.route("/save_tab_mode", methods=["POST"])
+def save_tab_mode():
+    tab_id = request.form.get("tab_id", "").strip()
+    mode = request.form.get("tab_mode", "bus").strip().lower()
+    if mode not in ("bus", "train"):
+        mode = "bus"
+    state = read_state()
+    for tab in state.get("tabs", []):
+        if tab.get("id") == tab_id:
+            tab["mode"] = mode
+            break
+    write_state(state)
+    flash("Tab mode is saved.")
+    return redirect(url_for("index"))
 @app.route("/save_api_key", methods=["POST"])
 def save_api_key():
     api_key = request.form.get("api_key", "").strip()
@@ -154,6 +168,7 @@ def add_tab():
     active = get_active_tab(state)
     if active.get("id") == "settings":
         active = {
+            "mode": "bus",
             "stop_id": "039026550001",
             "coordinates": "51.5074,-0.1278",
             "train_from": "RDG",
@@ -164,6 +179,7 @@ def add_tab():
     new_tab = {
         "id": f"tab-{int(now_ts() * 1000)}",
         "name": tab_name,
+        "mode": active.get("mode", "bus"),
         "stop_id": active.get("stop_id"),
         "coordinates": active.get("coordinates"),
         "train_from": active.get("train_from"),
@@ -220,15 +236,20 @@ def get_lines():
     now = datetime.now().strftime("%H:%M")
     state = read_state()
     active_tab = get_active_tab(state)
+    mode = active_tab.get("mode", "bus")
     stop_id = active_tab.get('stop_id', '039026550001')
-    buses = next_buses(stop_id)
-    # buses = get_trains()
-    if None in [weather, buses]:
+    buses = next_buses(stop_id) if mode == "bus" else None
+    trains = get_trains() if mode == "train" else None
+    if weather is None:
         return None
     else:
+        if mode == "bus" and buses is None:
+            return None
+        if mode == "train" and trains is None:
+            return None
         tab_name = active_tab.get("name", "Tab")
         header = f'{now} {tab_name} {weather}'
-        return [header] + buses
+        return [header] + (buses if mode == "bus" else trains)
 
 
 def oled_loop(state: APMode, display):

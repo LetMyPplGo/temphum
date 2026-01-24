@@ -6,7 +6,7 @@ import pandas as pd
 from pyproj import Transformer
 from datetime import datetime, timedelta
 
-from helpers import read_state
+from helpers import read_state, get_active_tab
 
 LDB_TOKEN = read_state().get('train_token')
 WSDL = 'http://lite.realtime.nationalrail.co.uk/OpenLDBWS/wsdl.aspx?ver=2021-11-01'
@@ -138,10 +138,21 @@ def _get_trains(station_from: str, station_to: str):
     return filtered_services
 
 
-def minutes_between(start_st: str, end_st: str) -> int:
+def _parse_time_hhmm(value: str):
     fmt = "%H:%M"
-    start = datetime.strptime(start_st, fmt)
-    end = datetime.strptime(end_st, fmt)
+    if not value or value.lower() in ("cancelled", "canceled", "delayed", "on time"):
+        return None
+    try:
+        return datetime.strptime(value, fmt)
+    except ValueError:
+        return None
+
+def minutes_between(start_st: str, end_st: str) -> int | None:
+    fmt = "%H:%M"
+    start = _parse_time_hhmm(start_st)
+    end = _parse_time_hhmm(end_st)
+    if start is None or end is None:
+        return None
     diff = (end - start).total_seconds() / 60
     # If end is before start, add 24 hours worth of minutes, if it's more than 12h forward, treat as backward
     if diff < 0:
@@ -153,8 +164,9 @@ def minutes_between(start_st: str, end_st: str) -> int:
 
 def get_trains():
     state = read_state()
-    station_from = state.get('train_from', 'RDG')
-    station_to = state.get('train_to', 'PAD')
+    tab = get_active_tab(state)
+    station_from = tab.get('train_from', 'RDG')
+    station_to = tab.get('train_to', 'PAD')
     services = _get_trains(station_from, station_to)
     lines = []
     for t in services:
@@ -165,9 +177,13 @@ def get_trains():
             if cp.crs == station_to
         )
         duration = minutes_between(t.std, t.subsequentCallingPoints.callingPointList[0].callingPoint[-1].st)
+        if duration is None:
+            duration = 0
         platform = f'p{t.platform}' if t.platform is not None else ''
         est = t.etd if t.etd != 'On time' else t.std
         time_to_train = minutes_between(datetime.now().strftime("%H:%M"), est)
+        if time_to_train is None:
+            time_to_train = ""
         # Long format
         # stops = len(t.subsequentCallingPoints.callingPointList[0].callingPoint)
         # lines.append(f'{est} {platform} {t.operatorCode} to {t.destination.location[0].locationName}, {duration}m, {stops} stop{"s" if stops > 1 else ""} ')

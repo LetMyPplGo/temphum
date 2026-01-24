@@ -20,6 +20,7 @@ def _default_tab(tab_id: str = "tab-1", name: str = "Tab 1") -> dict:
     return {
         "id": tab_id,
         "name": name,
+        "mode": "bus",
         "stop_id": _DEFAULT_STOP_ID,
         "coordinates": _DEFAULT_COORDS,
         "train_from": _DEFAULT_TRAIN_FROM,
@@ -64,6 +65,9 @@ def _normalize_tabs(state: dict) -> dict:
             if tab.get("name") != "Settings":
                 tab["name"] = "Settings"
                 changed = True
+        if tab.get("id") != "settings" and "mode" not in tab:
+            tab["mode"] = "bus"
+            changed = True
         if tab.get("id") != "settings" and "stop_id" not in tab:
             tab["stop_id"] = _DEFAULT_STOP_ID
             changed = True
